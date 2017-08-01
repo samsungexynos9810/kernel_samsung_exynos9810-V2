@@ -783,7 +783,6 @@ static void sugov_tunables_restore(struct cpufreq_policy *policy)
 					   sg_policy->down_rate_delay_ns);
 }
 
-<<<<<<< HEAD
 static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 			  void *data)
 {
@@ -801,8 +800,6 @@ static int fb_notifier_cb(struct notifier_block *nb, unsigned long action,
 	return NOTIFY_OK;
 }
 
-=======
->>>>>>> 91323666660f (BACKPORT: cpufreq: schedutil: Cache tunables on governor exit)
 static int sugov_init(struct cpufreq_policy *policy)
 {
 	struct sugov_policy *sg_policy;
