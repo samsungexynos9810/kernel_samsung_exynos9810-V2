@@ -131,6 +131,11 @@ config EXYNOS_VIRTUAL_DISPLAY
 	bool "Virtual display mode"
 	depends on EXYNOS_EVEREST
 
+config EXYNOS_MULTIRESOLUTION
+	bool "Multi resolution LCD support"
+	depends on EXYNOS_EVEREST && FB_WINDOW_UPDATE
+	default y
+
 endif
 
 source "drivers/video/fbdev/exynos/dpu_everest/panels/Kconfig"
