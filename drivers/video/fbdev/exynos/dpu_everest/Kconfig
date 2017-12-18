@@ -126,6 +126,11 @@ config USE_DISPLAYPORT_CCIC_EVENT_QUEUE
 	bool "use queue for CCIC notifications"
         depends on EXYNOS_DISPLAYPORT
         default n
+
+config EXYNOS_VIRTUAL_DISPLAY
+	bool "Virtual display mode"
+	depends on EXYNOS_EVEREST
+
 endif
 
 source "drivers/video/fbdev/exynos/dpu_everest/panels/Kconfig"
