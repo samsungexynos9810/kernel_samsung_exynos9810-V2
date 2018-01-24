@@ -205,6 +205,12 @@ void decon_dump(struct decon_device *decon, int dsi_dump)
 	case 0:
 		__decon_dump(1);
 		break;
+	case 1:
+		if (decon->dt.out_type != DECON_OUT_WB)
+			__decon_dump(0);
+		else
+			__decon_dump(1);
+		break;
 	case 2:
 	default:
 		__decon_dump(0);
@@ -925,11 +931,13 @@ static int _decon_disable(struct decon_device *decon, enum decon_state state)
 	decon_reg_clear_int_all(decon->id);
 
 	/* DMA protection disable must be happen on dpp domain is alive */
+	if (decon->dt.out_type != DECON_OUT_WB) {
 #if defined(CONFIG_EXYNOS_CONTENT_PATH_PROTECTION)
-	decon_set_protected_content(decon, NULL);
+		decon_set_protected_content(decon, NULL);
 #endif
-	decon->cur_using_dpp = 0;
-	decon_dpp_stop(decon, false);
+		decon->cur_using_dpp = 0;
+		decon_dpp_stop(decon, false);
+	}
 
 	if (psr.out_type == DECON_OUT_DP)
 		decon_reg_set_te_qactive_pll_mode(decon->id, 0);
@@ -1592,6 +1600,7 @@ static int decon_set_win_buffer(struct decon_device *decon,
 {
 	int ret;
 	u32 alpha_length;
+	struct decon_rect r;
 	struct sync_file *fence = NULL;
 	u32 config_size = 0;
 	u32 alloc_size = 0;
@@ -1600,6 +1609,14 @@ static int decon_set_win_buffer(struct decon_device *decon,
 	ret = decon_check_limitation(decon, idx, config);
 	if (ret)
 		goto err;
+
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		r.left = config->dst.x;
+		r.top = config->dst.y;
+		r.right = r.left + config->dst.w - 1;
+		r.bottom = r.top + config->dst.h - 1;
+		dpu_unify_rect(&regs->blender_bg, &r, &regs->blender_bg);
+	}
 
 	ret = decon_import_buffer(decon, idx, config, regs);
 	if (ret)
@@ -1698,6 +1715,21 @@ static void decon_check_used_dpp(struct decon_device *decon,
 			set_bit(win->dpp_id, &decon->prev_used_dpp);
 		}
 	}
+
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		set_bit(ODMA_WB, &decon->cur_using_dpp);
+		set_bit(ODMA_WB, &decon->prev_used_dpp);
+	}
+}
+
+void decon_dpp_wait_wb_framedone(struct decon_device *decon)
+{
+	struct v4l2_subdev *sd = NULL;
+
+	sd = decon->dpp_sd[ODMA_WB];
+	v4l2_subdev_call(sd, core, ioctl,
+			DPP_WB_WAIT_FOR_FRAMEDONE, NULL);
+
 }
 
 static int decon_set_dpp_config(struct decon_device *decon,
@@ -1731,6 +1763,18 @@ static int decon_set_dpp_config(struct decon_device *decon,
 				regs->num_of_window--;
 			clear_bit(win->dpp_id, &decon->cur_using_dpp);
 			set_bit(win->dpp_id, &decon->dpp_err_stat);
+			err_cnt++;
+		}
+	}
+
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		sd = decon->dpp_sd[ODMA_WB];
+		ret = v4l2_subdev_call(sd, core, ioctl, DPP_WIN_CONFIG,
+				&regs->dpp_config[MAX_DECON_WIN]);
+		if (ret) {
+			decon_err("failed to config ODMA_WB\n");
+			clear_bit(ODMA_WB, &decon->cur_using_dpp);
+			set_bit(ODMA_WB, &decon->dpp_err_stat);
 			err_cnt++;
 		}
 	}
@@ -1897,6 +1941,7 @@ static int __decon_update_regs(struct decon_device *decon, struct decon_reg_data
 	int err_cnt = 0;
 	unsigned short i, j;
 	struct decon_mode_info psr;
+	struct decon_param p;
 	bool has_cursor_win = false;
 #if defined(CONFIG_SUPPORT_MASK_LAYER)
 	int trigger_check = 0;
@@ -1936,10 +1981,26 @@ static int __decon_update_regs(struct decon_device *decon, struct decon_reg_data
 		decon_reg_set_window_control(decon->id, i, &regs->win_regs[i],
 						regs->win_regs[i].winmap_state);
 
-		/* backup cur dma_buf_data for freeing next update_handler_regs */
-		for (j = 0; j < regs->plane_cnt[i]; ++j)
-			decon->win[i]->dma_buf_data[j] = regs->dma_buf_data[i][j];
-		decon->win[i]->plane_cnt = regs->plane_cnt[i];
+		if (decon->dt.out_type != DECON_OUT_WB) {
+			/* backup cur dma_buf_data for freeing next update_handler_regs */
+			for (j = 0; j < regs->plane_cnt[i]; ++j)
+				decon->win[i]->dma_buf_data[j] = regs->dma_buf_data[i][j];
+			decon->win[i]->plane_cnt = regs->plane_cnt[i];
+		}
+	}
+
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		if (decon->lcd_info->xres != regs->dpp_config[ODMA_WB].dst.w
+				|| decon->lcd_info->yres != regs->dpp_config[ODMA_WB].dst.h) {
+			decon->lcd_info->xres = regs->dpp_config[ODMA_WB].dst.w;
+			decon->lcd_info->yres = regs->dpp_config[ODMA_WB].dst.h;
+		}
+
+		decon_reg_set_blender_bg_image_size(decon->id, DSI_MODE_SINGLE,
+				decon->lcd_info);
+		decon_to_init_param(decon, &p);
+		decon_reg_config_data_path_size(decon->id, decon->lcd_info->xres,
+				decon->lcd_info->yres, 0, NULL, &p);
 	}
 
 	err_cnt = decon_set_dpp_config(decon, regs);
@@ -2042,7 +2103,10 @@ static void decon_acquire_old_bufs(struct decon_device *decon,
 	}
 
 	for (i = 0; i < decon->dt.max_win; i++) {
-		plane_cnt[i] = decon->win[i]->plane_cnt;
+		if (decon->dt.out_type == DECON_OUT_WB)
+			plane_cnt[i] = regs->plane_cnt[i];
+		else
+			plane_cnt[i] = decon->win[i]->plane_cnt;
 
 		for (j = 0; j < plane_cnt[i]; ++j)
 			dma_bufs[i][j] = decon->win[i]->dma_buf_data[j];
@@ -2057,9 +2121,19 @@ static void decon_release_old_bufs(struct decon_device *decon,
 	int i, j;
 	struct dsim_device *dsim;
 	int num_dsi = (decon->dt.dsi_mode == DSI_MODE_DUAL_DSI) ? 2 : 1;
-	for (i = 0; i < decon->dt.max_win; i++)
+	for (i = 0; i < decon->dt.max_win; i++) {
 		for (j = 0; j < plane_cnt[i]; ++j)
-			decon_free_dma_buf(decon, &dma_bufs[i][j]);
+			if (decon->dt.out_type == DECON_OUT_WB)
+				decon_free_dma_buf(decon, &regs->dma_buf_data[i][j]);
+			else
+				decon_free_dma_buf(decon, &dma_bufs[i][j]);
+	}
+
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		for (j = 0; j < plane_cnt[0]; ++j)
+			decon_free_dma_buf(decon,
+					&regs->dma_buf_data[MAX_DECON_WIN][j]);
+	}
 
 	if (decon->dt.out_type == DECON_OUT_DSI) {
 		if (decon->lcd_info->mode == DECON_VIDEO_MODE) {
@@ -2343,50 +2417,62 @@ video_emul_check_done:
 		goto end;
 	}
 
-	decon->frame_cnt_target = decon->frame_cnt + 1;
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		decon_reg_release_resource(decon->id, &psr);
+		decon_dpp_wait_wb_framedone(decon);
+		/* Stop to prevent resource conflict */
+		decon->cur_using_dpp = 0;
+#if defined(CONFIG_EXYNOS_CONTENT_PATH_PROTECTION)
+		decon_set_protected_content(decon, NULL);
+#endif
+		decon_dbg("write-back timeline:%d, max:%d\n",
+				decon->timeline->value, decon->timeline_max);
+	} else {
+		decon->frame_cnt_target = decon->frame_cnt + 1;
 
 #if defined(CONFIG_EXYNOS_MASS_PANEL)
-	if (div_u64(local_clock() - timestamp, NSEC_PER_MSEC) >= 10)
-		decon_abd_save_udr(&decon->abd, 0, 0, 0);
+		if (div_u64(local_clock() - timestamp, NSEC_PER_MSEC) >= 10)
+			decon_abd_save_udr(&decon->abd, 0, 0, 0);
 #endif
 
-	decon_systrace(decon, 'C', "decon_wait_vsync", 1);
-	decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
-	decon_systrace(decon, 'C', "decon_wait_vsync", 0);
+		decon_systrace(decon, 'C', "decon_wait_vsync", 1);
+		decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
+		decon_systrace(decon, 'C', "decon_wait_vsync", 0);
 
-	if (decon->cursor.unmask)
-		decon_set_cursor_unmask(decon, false);
+		if (decon->cursor.unmask)
+			decon_set_cursor_unmask(decon, false);
 
-	decon_wait_for_vstatus(decon, 50);
-	if (decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
-		decon_err("%s shadow update timeout\n", __func__);
+		decon_wait_for_vstatus(decon, 50);
+		if (decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
+			decon_err("%s shadow update timeout\n", __func__);
 #if defined(CONFIG_EXYNOS_COMMON_PANEL) || defined(CONFIG_EXYNOS_MASS_PANEL)
-		if (decon_is_bypass(decon))
-			goto end;
+			if (decon_is_bypass(decon))
+				goto end;
 #endif
-		decon_up_list_saved();
-		decon_dump_afbc_handle(decon, old_dma_bufs);
-		decon_dump(decon, REQ_DSI_DUMP);
+			decon_up_list_saved();
+			decon_dump_afbc_handle(decon, old_dma_bufs);
+			decon_dump(decon, REQ_DSI_DUMP);
 #ifdef CONFIG_LOGGING_BIGDATA_BUG
-		log_decon_bigdata(decon);
+			log_decon_bigdata(decon);
 #endif
-		BUG();
-	}
+			BUG();
+		}
 
 #if defined(CONFIG_EXYNOS_MASS_PANEL)
-	if (decon->dt.out_type == DECON_OUT_DSI && atomic_read(&decon->ffu_flag)) {
-		if (regs->num_of_window) {
-			atomic_dec(&decon->ffu_flag);
-			decon_simple_notifier_call_chain(DECON_EVENT_FRAME_SEND, FB_BLANK_UNBLANK);
+		if (decon->dt.out_type == DECON_OUT_DSI && atomic_read(&decon->ffu_flag)) {
+			if (regs->num_of_window) {
+				atomic_dec(&decon->ffu_flag);
+				decon_simple_notifier_call_chain(DECON_EVENT_FRAME_SEND, FB_BLANK_UNBLANK);
+			}
 		}
-	}
 #endif
 
 #ifdef CONFIG_SUPPORT_HMD
-	if (video_emul_en)
-		goto end;
+		if (video_emul_en)
+			goto end;
 #endif
-	decon_reg_set_trigger(decon->id, &psr, DECON_TRIG_DISABLE);
+		decon_reg_set_trigger(decon->id, &psr, DECON_TRIG_DISABLE);
+	}
 
 end:
 	DPU_EVENT_LOG(DPU_EVT_TRIG_MASK, &decon->sd, ktime_set(0, 0));
@@ -2671,6 +2757,12 @@ static int decon_prepare_win_config(struct decon_device *decon,
 			break;
 		}
 		win_regs->winmap_state = color_map;
+	}
+	
+	if (decon->dt.out_type == DECON_OUT_WB) {
+		regs->protection[MAX_DECON_WIN] = win_config[MAX_DECON_WIN].protection;
+		ret = decon_import_buffer(decon, MAX_DECON_WIN,
+				&win_config[MAX_DECON_WIN], regs);
 	}
 
 	for (i = 0; i < MAX_DPP_SUBDEV; i++) {
@@ -3527,6 +3619,8 @@ static int decon_register_subdevs(struct decon_device *decon)
 
 	if (decon->dt.out_type == DECON_OUT_DSI)
 		ret = decon_get_out_sd(decon);
+	else if (decon->dt.out_type == DECON_OUT_WB)
+		ret = decon_wb_get_out_sd(decon);
 #if defined(CONFIG_EXYNOS_DISPLAYPORT)
 	else if (decon->dt.out_type == DECON_OUT_DP)
 		ret = decon_displayport_get_out_sd(decon);
@@ -3989,6 +4083,11 @@ static int decon_init_resources(struct decon_device *decon,
 			if (ret)
 				goto err;
 		}
+	} else if (decon->dt.out_type == DECON_OUT_WB) {
+		decon_wb_get_clocks(decon);
+		ret =  decon_wb_register_irq(decon);
+		if (ret)
+			goto err;
 	} else if (decon->dt.out_type == DECON_OUT_DP) {
 		decon_displayport_get_clocks(decon);
 		ret =  decon_displayport_register_irq(decon);
