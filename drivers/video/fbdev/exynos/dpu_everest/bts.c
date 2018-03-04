@@ -303,9 +303,11 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 		u32 is_after)
 {
 	struct bts_bw bw = { 0, };
+#if defined(CONFIG_EXYNOS_DISPLAYPORT)
 	struct displayport_device *displayport = get_displayport_drvdata();
 	videoformat cur = displayport->cur_video;
 	__u64 pixelclock = supported_videos[cur].dv_timings.bt.pixelclock;
+#endif
 
 	DPU_DEBUG_BTS("%s +\n", __func__);
 
@@ -340,9 +342,11 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 		if (decon->bts.total_bw <= decon->bts.prev_total_bw)
 			bts_update_bw(decon->bts.type, bw);
 
+#if defined(CONFIG_EXYNOS_DISPLAYPORT)
 		if ((displayport->state == DISPLAYPORT_STATE_ON)
 			&& (pixelclock >= UHD_60HZ_PIXEL_CLOCK)) /* 4K DP case */
 			return;
+#endif
 
 		if (decon->bts.max_disp_freq <= decon->bts.prev_max_disp_freq)
 			pm_qos_update_request(&decon->bts.disp_qos,
@@ -354,9 +358,11 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 		if (decon->bts.total_bw > decon->bts.prev_total_bw)
 			bts_update_bw(decon->bts.type, bw);
 
+#if defined(CONFIG_EXYNOS_DISPLAYPORT)
 		if ((displayport->state == DISPLAYPORT_STATE_ON)
 			&& (pixelclock >= UHD_60HZ_PIXEL_CLOCK)) /* 4K DP case */
 			return;
+#endif
 
 		if (decon->bts.max_disp_freq > decon->bts.prev_max_disp_freq)
 			pm_qos_update_request(&decon->bts.disp_qos,
@@ -368,7 +374,7 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 
 void dpu_bts_acquire_bw(struct decon_device *decon)
 {
-#if defined(CONFIG_DECON_BTS_LEGACY)
+#if defined(CONFIG_DECON_BTS_LEGACY) && defined(CONFIG_EXYNOS_DISPLAYPORT)
 	struct displayport_device *displayport = get_displayport_drvdata();
 	videoformat cur = displayport->cur_video;
 	__u64 pixelclock = supported_videos[cur].dv_timings.bt.pixelclock;
@@ -427,7 +433,7 @@ void dpu_bts_release_bw(struct decon_device *decon)
 		pm_qos_update_request(&decon->bts.disp_qos, 0);
 		decon->bts.prev_max_disp_freq = 0;
 	} else if (decon->dt.out_type == DECON_OUT_DP) {
-#if defined(CONFIG_DECON_BTS_LEGACY)
+#if defined(CONFIG_DECON_BTS_LEGACY) && defined(CONFIG_EXYNOS_DISPLAYPORT)
 		if (pm_qos_request_active(&decon->bts.mif_qos))
 			pm_qos_update_request(&decon->bts.mif_qos, 0);
 		else
