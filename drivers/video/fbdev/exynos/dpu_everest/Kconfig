@@ -126,6 +126,11 @@ config SUPPORT_KERNEL_4_9
 	depends on EXYNOS_EVEREST
 	default y
 
+config EXYNOS_DECON_DQE
+	bool "Samsung Exynos DQE driver"
+	depends on EXYNOS_EVEREST
+	default y
+
 endif
 
 source "drivers/video/fbdev/exynos/dpu_everest/panels/Kconfig"
