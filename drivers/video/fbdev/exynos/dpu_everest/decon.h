@@ -390,6 +390,11 @@ enum decon_scaler_path {
 	SCALERPATH_VGRF	= 0x2,
 };
 
+enum decon_enhance_path {
+	ENHANCEPATH_ENHANCE_ALL_OFF	= 0x0,
+	ENHANCEPATH_DQE_ON		= 0x2,
+};
+
 enum decon_share_path {
 	SHAREPATH_DQE_USE		= 0x0,
 	SHAREPATH_VG0_USE		= 0x1,
@@ -1602,6 +1607,13 @@ int decon_reg_wait_update_done_and_mask(u32 id, struct decon_mode_info *psr,
 void decon_reg_set_trigger(u32 id, struct decon_mode_info *psr,
 		enum decon_set_trig en);
 int decon_reg_wait_for_update_timeout(u32 id, unsigned long timeout);
+
+
+void decon_reg_set_data_path(u32 id, enum decon_data_path d_path,
+		enum decon_scaler_path s_path, enum decon_enhance_path e_path);
+void decon_reg_get_data_path(u32 id, enum decon_data_path *d_path,
+		enum decon_scaler_path *s_path, enum decon_enhance_path *e_path);
+
 int decon_reg_get_interrupt_and_clear(u32 id, u32 *ext_irq);
 void decon_reg_set_blender_bg_image_size(u32 id, enum decon_dsi_mode dsi_mode,
 		struct decon_lcd *lcd_info);
@@ -1627,6 +1639,7 @@ void decon_reg_set_win_enable(u32 id, u32 win_idx, u32 en);
 /* tui feature support external to security driver(gud) */
 int decon_tui_protection(bool tui_en);
 void decon_reg_update_req_global(u32 id);
+void decon_reg_update_req_dqe(u32 id);
 
 /* helper functions */
 int dpu_get_sd_by_drvname(struct decon_device *decon, char *drvname);

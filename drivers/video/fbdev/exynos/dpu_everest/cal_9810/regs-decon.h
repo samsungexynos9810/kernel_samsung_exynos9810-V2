@@ -136,6 +136,7 @@
 
 #define SHADOW_REG_UPDATE_REQ				0x0060
 #define SHADOW_REG_UPDATE_REQ_GLOBAL		(1 << 31)
+#define SHADOW_REG_UPDATE_REQ_DQE		(1 << 28)
 #define SHADOW_REG_UPDATE_REQ_WIN(_win)		(1 << (_win))
 #define SHADOW_REG_UPDATE_REQ_FOR_DECON		(0x3f)
 
@@ -297,6 +298,9 @@
 #define SCALRE_PATH_F(_v)				((_v) << 24)
 #define SCALRE_PATH_MASK				(0x3 << 24)
 #define SCALRE_PATH_GET(_v)				(((_v) >> 24) & 0x3)
+#define ENHANCE_PATH_F(_v)			((_v) << 12)
+#define ENHANCE_PATH_MASK			(0x7 << 12)
+#define ENHANCE_PATH_GET(_v)			(((_v) >> 12) & 0x7)
 #define COMP_OUTIF_PATH_F(_v)			((_v) << 0)
 #define COMP_OUTIF_PATH_MASK			(0xff << 0)
 #define COMP_OUTIF_PATH_GET(_v)			(((_v) >> 0) & 0xff)
