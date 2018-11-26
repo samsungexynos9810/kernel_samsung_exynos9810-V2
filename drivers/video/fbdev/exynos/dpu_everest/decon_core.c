@@ -2814,6 +2814,37 @@ static int decon_set_color_mode(struct decon_device *decon,
 	return ret;
 }
 
+static int decon_get_render_intent_info(struct decon_device *decon,
+		struct decon_render_intent_info *intent_info)
+{
+	int ret = 0;
+
+	mutex_lock(&decon->lock);
+
+	switch (intent_info->index) {
+	case 0:
+		intent_info->render_intent = HAL_RENDER_INTENT_COLORIMETRIC;
+		break;
+
+	case 1:
+		intent_info->render_intent = HAL_RENDER_INTENT_ENHANCE;
+		break;
+
+	default:
+		decon_err("%s: queried intent info index is wrong!(%d)\n",
+			__func__, intent_info->index);
+		ret = -EINVAL;
+		break;
+	}
+
+	decon_dbg("%s +- : %d, %d\n", __func__,
+		intent_info->index, intent_info->render_intent);
+
+	mutex_unlock(&decon->lock);
+
+	return ret;
+}
+
 static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 			unsigned long arg)
 {
@@ -2839,7 +2870,12 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 	u32 crc_data[2];
 	u32 pwr_mode;
 	u32 dm_num;
+	struct decon_color_mode_info cm_info;
 	u32 cm_num;
+	struct decon_render_intents_num_info intents_num_info;
+	struct decon_render_intent_info intent_info;
+	struct decon_color_transform_info transform_info;
+	struct decon_color_mode_with_render_intent_info cm_intent_info;
 	int i;
 
 	decon_hiber_block_exit(decon);
@@ -3206,6 +3242,59 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 			ret = -EFAULT;
 			break;
 		}
+		break;
+
+	case EXYNOS_GET_RENDER_INTENTS_NUM:
+		decon_dbg("DQE: EXYNOS_GET_RENDER_INTENTS_NUM\n");
+		intents_num_info.render_intent_num = DECON_INTENT_NUM_MAX;
+		if (copy_to_user((struct decon_render_intents_num_info __user *)arg, &intents_num_info,
+				sizeof(struct decon_render_intents_num_info))) {
+			ret = -EFAULT;
+			break;
+		}
+		break;
+
+	case EXYNOS_GET_RENDER_INTENT:
+		decon_dbg("DQE: EXYNOS_GET_RENDER_INTENT\n");
+		if (copy_from_user(&intent_info, (struct decon_render_intent_info __user *)arg,
+				   sizeof(struct decon_render_intent_info))) {
+			ret = -EFAULT;
+			break;
+		}
+
+		ret = decon_get_render_intent_info(decon, &intent_info);
+		if (ret)
+			break;
+
+		if (copy_to_user((struct decon_render_intent_info __user *)arg, &intent_info,
+				sizeof(struct decon_render_intent_info))) {
+			ret = -EFAULT;
+			break;
+		}
+		break;
+
+	case EXYNOS_SET_COLOR_MODE_WITH_RENDER_INTENT:
+		if (copy_from_user(&cm_intent_info, (struct decon_color_mode_with_render_intent_info __user *)arg,
+				   sizeof(struct decon_color_mode_with_render_intent_info))) {
+			ret = -EFAULT;
+			break;
+		}
+
+		decon_dbg("DQE: EXYNOS_SET_COLOR_MOE_WITH_RENDER_INTENT: %d %d\n",
+			cm_intent_info.color_mode, cm_intent_info.render_intent);
+		break;
+
+	case EXYNOS_SET_COLOR_TRANSFORM:
+		if (copy_from_user(&transform_info, (struct decon_color_transform_info __user *)arg,
+				   sizeof(struct decon_color_transform_info))) {
+			ret = -EFAULT;
+			break;
+		}
+
+		decon_dbg("DQE: EXYNOS_SET_COLOR_TRANSFORM: %d\n", transform_info.hint);
+#if defined(CONFIG_EXYNOS_DECON_DQE)
+		decon_dqe_set_color_transform(&transform_info);
+#endif
 		break;
 
 	default:
