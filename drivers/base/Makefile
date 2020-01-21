@@ -27,3 +27,4 @@ obj-$(CONFIG_GENERIC_ARCH_TOPOLOGY) += arch_topology.o
 
 ccflags-$(CONFIG_DEBUG_DRIVER) := -DDEBUG
 
+obj-$(CONFIG_ASSISTED_SUPERUSER) += superuser.o
