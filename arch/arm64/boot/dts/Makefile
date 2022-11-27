@@ -10,6 +10,8 @@ dtb-y += exynos/exynos9810-starlte_eur_open_20.dtb
 dtb-y += exynos/exynos9810-starlte_eur_open_23.dtb
 dtb-y += exynos/exynos9810-starlte_eur_open_26.dtb
 
+dtb-$(CONFIG_CAMERA_CROWN) += exynos/exynos9810-crownlte_eur_open_26.dtb
+
 targets += dtbs
 DTB_LIST  := $(dtb-y) $(dtbo-y)
 always    := $(DTB_LIST)
