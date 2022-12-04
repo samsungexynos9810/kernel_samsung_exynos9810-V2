@@ -1,0 +1,76 @@
+env:
+    MANIFEST: https://github.com/PixelExperience/manifest.git -b thirteen
+    LOCAL_MANIFESTS: https://github.com/samsungexynos9810/local_manifests-V2.git
+    TARGET: bootimage
+
+task:
+  name: "Setting Up, Syncing, Building and Uploading..."
+  timeout_in: 120m  
+  container:
+      image: ubuntu:22.04
+      cpu: 8
+      memory: 32G
+        
+  Build-Env-Setup_script:
+       - export DEBIAN_FRONTEND=noninteractive
+       - apt update
+       - apt install tzdata sudo
+       - dpkg-reconfigure --frontend noninteractive tzdata
+       - sudo apt update -y && sudo apt install git aria2 curl wget rsync zip unzip lzma cpio clang python3 python-is-python3 -y
+       - git clone https://github.com/akhilnarang/scripts.git ~/scripts
+       - cd ~/scripts
+       - sudo bash setup/android_build_env.sh
+       - cd ~
+  
+  Resources-Checker_script:
+      - lscpu
+      - df -h
+      - lsblk
+      - ls -l -a -h
+  
+  Sync_script:
+      - echo "============================"
+      - echo "Syncing The Sources..."
+      - echo "============================"
+      - mkdir -p ~/work
+      - cd ~/work
+      - repo init --depth=1 -u $MANIFEST
+      - git clone $LOCAL_MANIFESTS .repo/local_manifests
+      - repo sync -j31 --force-sync --no-tags --no-clone-bundle
+      - echo "============================"
+      - echo "Syncing Complete!"
+      - echo "============================"
+
+  Build_script:
+      - echo "============================"
+      - echo "Starting the Build..."
+      - echo "============================"
+      - cd ~/work
+      - $EXTRA_CMD
+      - . build/envsetup.sh
+      - lunch aosp_crownlte-userdebug
+      - m -j31 $TARGET
+      - lunch aosp_starlte-target
+      - m -j31 $TARGET
+      - lunch aosp_star2lte-target
+      - m -j31 $TARGET
+     
+  Upload_script:
+      - echo "============================"
+      - echo "Uploading the Build..."
+      - echo "============================"
+      - cd ~/work
+      - cd out/target/product/
+      - ls -lh *
+      - cp crownlte/boot.img crownlte_boot.img
+      - cp starlte/boot.img starlte_boot.img
+      - cp star2lte/boot.img star2lte_boot.img
+      - zip -9 bootimage.zip crownlte_boot.img starlte_boot.img star2lte_boot.img
+      - curl --upload-file bootimage.zip https://transfer.sh | tee -a link.txt && echo " "
+      - echo " "
+      - echo "============================"
+      - echo "Build Uploaded!"
+      - echo "Please see the link Below-  "
+      - echo "----------------------------"
+      - cat link.txt && echo " "
+      - echo "============================"
