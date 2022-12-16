@@ -5000,7 +5000,7 @@
 			boost_table = < 20 858000 15 962000 5 1261000 0 >;
 			up_rate_limit_table = < 5 >;
 			down_rate_limit_table = < 5 >;
-			upscale_ratio_table = < 50 962000 65 >;
+			upscale_ratio_table = < 50 962000 65 1469000 80>;
 		};
 	};
 
@@ -5076,7 +5076,7 @@
 				ctrl-type = <PM_QOS_MIN_LIMIT>;
 				execution-mode = <AARCH64_MODE>;
 					/* mngs	    ank */
-				table = < 2964000 1794000
+				table = < 2886000 1794000
 					  2860000 1794000
 					  2704000 1794000
 					  2652000 1794000
@@ -5103,7 +5103,7 @@
 				ctrl-type = <PM_QOS_MAX_LIMIT>;
 				execution-mode = <AARCH64_MODE>;
 					/* mngs	    ank */
-				table = < 2964000 1794000
+				table = < 2886000 1794000
 					  2860000 1794000
 					  2704000 1794000
 					  2652000 1794000
@@ -5137,7 +5137,8 @@
 			cal-id = <ACPM_DVFS_CPUCL0>;
 			dm-type = <DM_CPU_CL0>;
 
-			min-freq = <455000>;
+			min-freq = <208000>;
+			max-freq = <2002000>;
 
 			/* PM QoS Class ID*/
 			pm_qos-min-class = <3>;
@@ -5150,7 +5151,8 @@
 					const-type = <CONSTRAINT_MIN>;
 					dm-type = <DM_MIF>;
 						/*  cpu     mif  */
-					table = < 1950000  845000
+					table = < 2002000  845000
+						  1950000  845000
 						  1794000  845000
 						  1690000  845000
 						  1456000  676000
@@ -5161,6 +5163,8 @@
 						   715000  546000
 						   598000  421000
 						   455000       0
+						   299000       0
+						   208000       0
 						   >;
 				};
 				mif-skew {
@@ -5177,7 +5181,7 @@
 			cal-id = <ACPM_DVFS_CPUCL1>;
 			dm-type = <DM_CPU_CL1>;
 
-			min-freq = <650000>;
+			min-freq = <598000>;
 			max-freq = <1794000>;
 			policy-max = <1794000>;
 
