@@ -18,13 +18,17 @@
 #include "exynos9810-star2lte_eur_open_gpio_18.dtsi"
 
 / {
-	model = "Samsung Star2 rev26 board based on EXYNOS9810";
+	model = "Samsung Star2 rev23 board based on EXYNOS9810";
 	model_info-chip = <9810>;
 	model_info-platform = "android";
 	model_info-subtype = "samsung";
-	model_info-hw_rev = <26>;
-	model_info-hw_rev_end = <255>;
-	compatible = "Samsung, Star2 rev26", "Samsung,EXYNOS9810";
+	model_info-hw_rev = <23>;
+	model_info-hw_rev_end = <25>;
+	compatible = "Samsung, Star2 rev23", "Samsung,EXYNOS9810";
+
+	sound {
+		mixer-paths = "mixer_paths_r08.xml";
+	};
 
 	pinctrl@10830000 {
 		spi7_bus_suspend: spi7-bus-suspend {
