@@ -253,7 +253,6 @@ enum decon_fifo_mode {
 	DECON_FIFO_08K,
 	DECON_FIFO_12K,
 	DECON_FIFO_16K,
-	DECON_FIFO_DUAL,
 };
 
 enum decon_merger_mode {
@@ -646,29 +645,20 @@ struct decon_win_config_extra {
 	u32 reserved[7];
 };
 
-struct decon_win_config_data_old_alt {
-	int	retire_fence;
-	int	fd_odma;
-	struct decon_win_config config[MAX_DECON_WIN + 1];
-};
-
 struct decon_win_config_data_old {
 	int	retire_fence;
 	int	fd_odma;
-	struct decon_win_config config[MAX_DECON_WIN + 2];
-};
-
-struct decon_win_config_data_alt {
-	int	retire_fence;
-	int	fd_odma;
 	struct decon_win_config config[MAX_DECON_WIN + 1];
-	struct decon_win_config_extra extra;
 };
 
 struct decon_win_config_data {
 	int	retire_fence;
 	int	fd_odma;
+#ifdef CONFIG_SUPPORT_DSU
 	struct decon_win_config config[MAX_DECON_WIN + 2];
+#else
+	struct decon_win_config config[MAX_DECON_WIN + 1];
+#endif
 	struct decon_win_config_extra extra;
 };
 
@@ -1668,12 +1658,8 @@ void decon_reg_set_dsu(u32 id, enum decon_dsi_mode dsi_mode, struct decon_param 
 /* IOCTL commands */
 #define S3CFB_SET_VSYNC_INT		_IOW('F', 206, __u32)
 #define S3CFB_DECON_SELF_REFRESH	_IOW('F', 207, __u32)
-#define S3CFB_WIN_CONFIG_OLD_ALT		_IOW('F', 209, \
-						struct decon_win_config_data_old_alt)
 #define S3CFB_WIN_CONFIG_OLD		_IOW('F', 209, \
 						struct decon_win_config_data_old)
-#define S3CFB_WIN_CONFIG_ALT		_IOW('F', 209, \
-						struct decon_win_config_data_alt)
 #define S3CFB_WIN_CONFIG		_IOW('F', 209, \
 						struct decon_win_config_data)
 #define EXYNOS_DISP_INFO		_IOW('F', 260, \
