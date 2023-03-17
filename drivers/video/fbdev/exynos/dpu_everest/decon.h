@@ -57,9 +57,6 @@
 #include "disp_err.h"
 #endif
 
-#ifdef CONFIG_SUPPORT_DSU
-#include "dsu.h"
-#endif
 #define MAX_DECON_CNT		3
 #define SUCCESS_EXYNOS_SMC	0
 
@@ -634,15 +631,6 @@ struct decon_win_config {
 			/* source framebuffer coordinates */
 			struct decon_frame		src;
 		};
-#ifdef CONFIG_SUPPORT_DSU
-		struct {
-			int left;
-			int top;
-			int right;
-			int bottom;
-			int mode;
-		};
-#endif
 	};
 	/* destination OSD coordinates */
 	struct decon_frame dst;
@@ -677,9 +665,6 @@ struct decon_reg_data {
 	/* cursor async */
 	bool is_cursor_win[MAX_DECON_WIN];
 	int cursor_win;
-#ifdef CONFIG_SUPPORT_DSU
-	struct dsu_info dsu;
-#endif
 
 #if defined(CONFIG_SUPPORT_MASK_LAYER)
 	bool mask_layer;
@@ -1233,9 +1218,6 @@ struct decon_device {
 #ifdef CONFIG_DISPLAY_USE_INFO
 	struct notifier_block dpui_notif;
 #endif
-#ifdef CONFIG_SUPPORT_DSU
-	struct dsu_info dsu;
-#endif
 	/* systrace */
 	struct decon_systrace_data systrace;
 
@@ -1742,14 +1724,6 @@ void decon_reg_set_te_qactive_pll_mode(u32 id, u32 en);
 
 int dpu_sysmmu_fault_handler(struct iommu_domain *domain,
 	struct device *dev, unsigned long iova, int flags, void *token);
-
-#ifdef CONFIG_SUPPORT_DSU
-int set_dsu_win_config(struct decon_device *decon,
-	struct decon_win_config *windata, struct decon_reg_data *regs);
-void init_dsu_info(struct decon_device *decon);
-int set_dsu_config(struct decon_device *decon, struct decon_reg_data *regs);
-void decon_reg_set_dsu(u32 id, enum decon_dsi_mode dsi_mode, struct decon_param *p);
-#endif
 
 /* IOCTL commands */
 #define S3CFB_SET_VSYNC_INT		_IOW('F', 206, __u32)

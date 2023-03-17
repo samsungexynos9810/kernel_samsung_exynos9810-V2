@@ -1346,23 +1346,6 @@ static int dsim_s_stream(struct v4l2_subdev *sd, int enable)
 		return dsim_disable(dsim);
 }
 
-
-#ifdef CONFIG_SUPPORT_DSU
-static int set_dsim_dsu(struct dsim_device *dsim, struct dsu_info *dsu)
-{
-	int ret = 0;
-
-	dsim_info("DSIM:INFO:%s:mode:%d, res:%d,%d,%d,%d\n",
-		__func__, dsu->mode, dsu->left, dsu->top, dsu->right, dsu->bottom);
-
-	call_panel_ops(dsim, dsu, dsim, dsu);
-
-	dsim_reg_set_dsu(dsim->id, &dsim->lcd_info);
-
-	return ret;
-}
-#endif
-
 static int dsim_free_fb_resource(struct dsim_device *dsim)
 {
 	/* unmap */
@@ -1449,12 +1432,6 @@ static long dsim_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg)
 
 	case DSIM_IOC_DOZE_SUSPEND:
 		ret = dsim_doze_suspend(dsim);
-		break;
-#endif
-
-#ifdef CONFIG_SUPPORT_DSU
-	case DSIM_IOC_DSU:
-		ret = set_dsim_dsu(dsim, (struct dsu_info *)arg);
 		break;
 #endif
 
