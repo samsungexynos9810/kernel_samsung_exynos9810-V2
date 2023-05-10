@@ -748,6 +748,7 @@ static int dsim_get_clocks(struct dsim_device *dsim)
 	return 0;
 }
 
+#if !defined(CONFIG_EXYNOS_COMMON_PANEL)
 static int dsim_get_gpios(struct dsim_device *dsim)
 {
 	struct device *dev = dsim->dev;
@@ -785,9 +786,7 @@ static int dsim_reset_panel(struct dsim_device *dsim)
 
 	dsim_dbg("%s +\n", __func__);
 
-#if defined(CONFIG_EXYNOS_MASS_PANEL)
 	call_panel_ops(dsim, reset, dsim);
-#endif
 
 	if (res->lcd_reset <= 0)
 		return 0;
@@ -810,21 +809,72 @@ static int dsim_reset_panel(struct dsim_device *dsim)
 	dsim_dbg("%s -\n", __func__);
 	return 0;
 }
+#else
+int dsim_function_reset(struct dsim_device *dsim)
+{
+	int ret = 0;
+#if 0
+	struct decon_device *decon = get_decon_drvdata(0);
+
+	decon_hiber_block_exit(decon);
+
+	mutex_lock(&dsim->cmd_lock);
+	if (!IS_DSIM_ON_STATE(dsim)) {
+		dsim_err("DSIM is off. state(%d)\n", dsim->state);
+		ret = -EINVAL;
+		goto err_exit;
+	}
+	dsim_reg_function_reset(dsim->id);
+	dsim_info("dsim-%d sw function reset\n", dsim->id);
+
+err_exit:
+	mutex_unlock(&dsim->cmd_lock);
+	decon_hiber_unblock(decon);
+#endif
+	return ret;
+}
+
+#ifdef CONFIG_OLD_DISP_TIMING
+static int dsim_reset_panel(struct dsim_device *dsim)
+{
+	int ret;
+
+	dsim_dbg("%s +\n", __func__);
+
+	ret = call_panel_ops(dsim, reset, dsim);
+
+	dsim_dbg("%s -\n", __func__);
+	return 0;
+}
+#endif
+#endif
 
 static int dsim_set_panel_power(struct dsim_device *dsim, bool on)
 {
+#if !defined(CONFIG_EXYNOS_COMMON_PANEL)
 	struct dsim_resources *res = &dsim->res;
+#endif
 	int ret;
 
 	dsim_dbg("%s(%d) +\n", __func__, on);
 
-#if defined(CONFIG_EXYNOS_MASS_PANEL)
+#if defined(CONFIG_EXYNOS_COMMON_PANEL)
+	if (on)
+		ret = call_panel_ops(dsim, poweron, dsim);
+	else
+		ret = call_panel_ops(dsim, poweroff, dsim);
+	if (ret < 0) {
+		dsim_err("%s failed to set power\n", __func__);
+		return ret;
+	}
+#elif defined(CONFIG_EXYNOS_MASS_PANEL)
 	if (on)
 		call_panel_ops(dsim, poweron, dsim);
 	else
 		call_panel_ops(dsim, poweroff, dsim);
 #endif
 
+#if !defined(CONFIG_EXYNOS_COMMON_PANEL)
 	if (on) {
 		if (res->lcd_power[0] > 0) {
 			ret = gpio_request_one(res->lcd_power[0],
@@ -880,6 +930,7 @@ static int dsim_set_panel_power(struct dsim_device *dsim, bool on)
 			usleep_range(5000, 6000);
 		}
 	}
+#endif
 
 	dsim_dbg("%s(%d) -\n", __func__, on);
 

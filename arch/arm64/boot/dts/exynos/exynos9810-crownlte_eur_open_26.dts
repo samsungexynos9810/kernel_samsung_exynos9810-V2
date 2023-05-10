@@ -5183,6 +5183,8 @@
 		compatible = "samsung,mipi-phy-m4s4-top";
 		samsung,pmu-syscon = <67>;
 		isolation = <1804>;
+		isolation_bits = <1>;
+		sysreg_bits = <16>;
 		owner = <0>;
 		#phy-cells = <1>;
 		linux,phandle = <72>;

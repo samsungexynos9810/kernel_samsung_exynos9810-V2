@@ -31,15 +31,6 @@ static inline void init_debugfs_backlight(struct backlight_device *bd, unsigned 
 static inline void init_debugfs_param(const char *name, void *ptr, u32 ptr_type, u32 sum_size, u32 ptr_unit) {};
 #endif
 
-struct dsim_device;
-#if defined(CONFIG_DEBUG_FS) && !defined(CONFIG_SAMSUNG_PRODUCT_SHIP) && defined(CONFIG_SMCDSD_LCD_DEBUG)
-extern void dsim_write_data_dump(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1);
-extern int run_cmdlist(u32 index);
-#else
-static inline void dsim_write_data_dump(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1) {};
-static inline int run_cmdlist(u32 index) { return 0; };
-#endif
-
 #if defined(CONFIG_DEBUG_FS) && !defined(CONFIG_SAMSUNG_PRODUCT_SHIP) && defined(CONFIG_SMCDSD_LCD_DEBUG)
 static inline int dd_simple_write_to_buffer(char *ibuf, size_t sizeof_ibuf,
 					loff_t *ppos, const char __user *user_buf, size_t count)

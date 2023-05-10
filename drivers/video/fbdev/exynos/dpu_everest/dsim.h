@@ -472,6 +472,13 @@ void dsim_reg_enable_shadow(u32 id, u32 en);
 int dsim_function_reset(struct dsim_device *dsim);
 void parse_lcd_info(struct device_node *, struct decon_lcd *);
 #endif
+#if defined(CONFIG_EXYNOS_MASS_PANEL) && defined(CONFIG_DEBUG_FS) && !defined(CONFIG_SAMSUNG_PRODUCT_SHIP) && defined(CONFIG_SMCDSD_LCD_DEBUG)
+extern void dsim_write_data_dump(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1);
+extern int run_cmdlist(u32 index);
+#else
+static inline void dsim_write_data_dump(struct dsim_device *dsim, u32 id, unsigned long d0, u32 d1) {};
+static inline int run_cmdlist(u32 index) { return 0; };
+#endif
 #define DSIM_IOC_FREE_FB_RES    _IOW('D', 11, u32)
 
 #ifdef CONFIG_SUPPORT_DSU

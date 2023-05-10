@@ -115,6 +115,7 @@ void tracing_mark_write(struct decon_device *decon, char id, char *str1, int val
 #ifdef CONFIG_PROFILING
 	trace_puts(buf);
 #endif
+
 }
 
 static void decon_dump_using_dpp(struct decon_device *decon)
@@ -223,6 +224,62 @@ void decon_dump(struct decon_device *decon, int dsi_dump)
 }
 
 #ifdef CONFIG_LOGGING_BIGDATA_BUG
+extern unsigned int get_panel_bigdata(void);
+
+/* Gen Big Data Error for Decon's Bug
+ *
+ * return value
+ * 1. 31 ~ 28 : decon_id
+ * 2. 27 ~ 24 : decon eing pend register
+ * 3. 23 ~ 16 : dsim underrun count
+ * 4. 15 ~  8 : 0x0e panel register
+ * 5.  7 ~  0 : 0x0a panel register
+ * */
+
+static unsigned int gen_decon_bug_bigdata(struct decon_device *decon)
+{
+	struct dsim_device *dsim;
+	unsigned int value, panel_value;
+	unsigned int underrun_cnt = 0;
+
+	/* for decon id */
+	value = decon->id << 28;
+
+	if (decon->id == 0) {
+		/* for eint pend value */
+		value |= (decon->eint_pend & 0x0f) << 24;
+
+		/* for underrun count */
+		dsim = container_of(decon->out_sd[0], struct dsim_device, sd);
+		if (dsim != NULL) {
+			underrun_cnt = dsim->total_underrun_cnt;
+			if (underrun_cnt > 0xff) {
+				decon_info("DECON:INFO:%s:dsim underrun exceed 1byte : %d\n",
+						__func__, underrun_cnt);
+				underrun_cnt = 0xff;
+			}
+		}
+		value |= underrun_cnt << 16;
+
+		/* for panel dump */
+		panel_value = get_panel_bigdata();
+		value |= panel_value & 0xffff;
+	}
+
+	decon_info("DECON:INFO:%s:big data : %x\n", __func__, value);
+	return value;
+}
+
+void log_decon_bigdata(struct decon_device *decon)
+{
+	unsigned int bug_err_num;
+
+	bug_err_num = gen_decon_bug_bigdata(decon);
+#ifdef CONFIG_SEC_DEBUG_EXTRA_INFO
+	sec_debug_set_extra_info_decon(bug_err_num);
+#endif
+}
+
 #ifdef CONFIG_DISPLAY_USE_INFO
 static int decon_dpui_notifier_callback(struct notifier_block *self,
 				 unsigned long event, void *data)
@@ -2283,8 +2340,10 @@ video_emul_check_done:
 
 	decon->frame_cnt_target = decon->frame_cnt + 1;
 
+#if defined(CONFIG_EXYNOS_MASS_PANEL)
 	if (div_u64(local_clock() - timestamp, NSEC_PER_MSEC) >= 10)
 		decon_abd_save_udr(&decon->abd, 0, 0, 0);
+#endif
 
 	decon_systrace(decon, 'C', "decon_wait_vsync", 1);
 	decon_wait_for_vsync(decon, VSYNC_TIMEOUT_MSEC);
@@ -2309,12 +2368,14 @@ video_emul_check_done:
 		BUG();
 	}
 
+#if defined(CONFIG_EXYNOS_MASS_PANEL)
 	if (decon->dt.out_type == DECON_OUT_DSI && atomic_read(&decon->ffu_flag)) {
 		if (regs->num_of_window) {
 			atomic_dec(&decon->ffu_flag);
 			decon_simple_notifier_call_chain(DECON_EVENT_FRAME_SEND, FB_BLANK_UNBLANK);
 		}
 	}
+#endif
 
 #ifdef CONFIG_SUPPORT_HMD
 	if (video_emul_en)
