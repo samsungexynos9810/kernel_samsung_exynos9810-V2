@@ -42,7 +42,7 @@
 #include "../panel/panel_drv.h"
 #endif
 
-#include "regs-decon.h"
+#include "./cal_9810/regs-decon.h"
 
 #ifdef CONFIG_EXYNOS_MASS_PANEL
 #include "decon_abd.h"
