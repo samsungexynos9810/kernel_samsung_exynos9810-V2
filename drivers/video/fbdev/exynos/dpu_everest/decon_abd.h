@@ -82,13 +82,7 @@ struct fto_log {
 
 	/* fence */
 	unsigned int winid;
-#if defined(CONFIG_SOC_EXYNOS7885)
-	struct sync_fence fence;
-#elif defined(CONFIG_SOC_EXYNOS9810)
 	struct sync_file fence;
-#else
-	struct dma_fence fence;
-#endif
 };
 
 struct abd_fto {

@@ -19,11 +19,7 @@
 #include <media/v4l2-subdev.h>
 
 #include "./panels/decon_lcd.h"
-#if defined(CONFIG_SOC_EXYNOS9810)
 #include "regs-dsim.h"
-#else
-#include "regs-dsim_8895.h"
-#endif
 
 #if defined(CONFIG_EXYNOS_COMMON_PANEL)
 #include "disp_err.h"
@@ -41,16 +37,10 @@ extern int dsim_log_level;
 #define DSIM_MODULE_NAME		"exynos-dsim"
 #define DSIM_DDI_ID_LEN			3
 
-#if defined(CONFIG_SOC_EXYNOS9810)
 #define DSIM_PIXEL_FORMAT_RGB24		0x3E
 #define DSIM_PIXEL_FORMAT_RGB18_PACKED	0x1E
 #define DSIM_PIXEL_FORMAT_RGB18		0x2E
 #define DSIM_PIXEL_FORMAT_RGB30_PACKED		0x0D
-#else
-#define DSIM_PIXEL_FORMAT_RGB24		0x0
-#define DSIM_PIXEL_FORMAT_RGB18_PACKED	0x1
-#define DSIM_PIXEL_FORMAT_RGB18		0x2
-#endif
 #define DSIM_RX_FIFO_MAX_DEPTH		64
 #define MAX_DSIM_CNT			2
 #define MAX_DSIM_DATALANE_CNT		4
@@ -179,9 +169,7 @@ struct dsim_pll_param {
 	u32 p;
 	u32 m;
 	u32 s;
-#if defined(CONFIG_SOC_EXYNOS9810)
 	u32 k;
-#endif
 	u32 pll_freq; /* in/out parameter: Mhz */
 };
 
@@ -222,9 +210,7 @@ struct dsim_resources {
 	struct regmap *phy_iso_reg;
 	unsigned int phy_iso_offset;
 	unsigned int phy_iso_bits;
-#if defined(CONFIG_SOC_EXYNOS9810)
 	void __iomem *phy_regs;
-#endif
 };
 
 #if defined(CONFIG_EXYNOS_MASS_PANEL)
@@ -388,7 +374,6 @@ static inline void dsim_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 	writel(val, dsim->res.regs + reg_id);
 }
 
-#if defined(CONFIG_SOC_EXYNOS9810)
 /* DPHY register access subroutines */
 static inline u32 dsim_phy_read(u32 id, u32 reg_id)
 {
@@ -420,7 +405,6 @@ static inline void dsim_phy_write_mask(u32 id, u32 reg_id, u32 val, u32 mask)
 	writel(val, dsim->res.phy_regs + reg_id);
 	/* printk("offset : 0x%8x, value : 0x%x\n", reg_id, val); */
 }
-#endif
 #define DSIM_IOC_FREE_FB_RES    _IOW('D', 11, u32)
 
 /* CAL APIs list */
@@ -459,11 +443,9 @@ void dsim_reg_enable_word_clock(u32 id, u32 en);
 void dsim_reg_set_esc_clk_prescaler(u32 id, u32 en, u32 p);
 u32 dsim_reg_is_pll_stable(u32 id);
 
-#if defined(CONFIG_SOC_EXYNOS9810)
 void dsim_reg_set_link_clock(u32 id, u32 en);
 void dsim_reg_set_video_mode(u32 id, u32 mode);
 void dsim_reg_enable_shadow(u32 id, u32 en);
-#endif
 #if defined(CONFIG_EXYNOS_COMMON_PANEL)
 int dsim_function_reset(struct dsim_device *dsim);
 void parse_lcd_info(struct device_node *, struct decon_lcd *);
@@ -501,9 +483,7 @@ static inline bool IS_DSIM_OFF_STATE(struct dsim_device *dsim)
 #define DSIM_IOC_DUMP			_IOW('D', 8, u32)
 #define DSIM_IOC_GET_WCLK		_IOW('D', 9, u32)
 
-#if defined(CONFIG_SOC_EXYNOS9810)
 #define DSIM_IOC_SET_CONFIG		_IOW('D', 10, u32)
-#endif
 #define DSIM_IOC_FREE_FB_RES    _IOW('D', 11, u32)
 
 #ifdef CONFIG_SUPPORT_DOZE

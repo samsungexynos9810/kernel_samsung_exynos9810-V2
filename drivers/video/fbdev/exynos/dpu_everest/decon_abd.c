@@ -32,21 +32,7 @@
 #if defined(CONFIG_CAL_IF)
 #include <soc/samsung/cal-if.h>
 #endif
-#if defined(CONFIG_SOC_EXYNOS7885)
-#include <dt-bindings/clock/exynos7885.h>
-#endif
-#if defined(CONFIG_SOC_EXYNOS9610)
-#include <dt-bindings/clock/exynos9610.h>
-#endif
-#if defined(CONFIG_SOC_EXYNOS9810)
 #include <dt-bindings/clock/exynos9810.h>
-#endif
-#if defined(CONFIG_SOC_EXYNOS3830)
-#include <dt-bindings/soc/samsung/exynos3830-devfreq.h>
-#endif
-#if defined(CONFIG_SOC_EXYNOS9630)
-#include <dt-bindings/soc/samsung/exynos9630-devfreq.h>
-#endif
 #if defined(CONFIG_SEC_DEBUG)
 #include <linux/sec_debug.h>
 #endif
@@ -167,24 +153,6 @@ static inline struct decon_device *get_abd_container_of(struct abd_protect *abd)
 	return container;
 }
 
-#if defined(CONFIG_SOC_EXYNOS7885) || defined(CONFIG_SOC_EXYNOS9610)
-static void set_frame_bypass(struct abd_protect *abd, unsigned int bypass)
-{
-	struct decon_device *container = get_abd_container_of(abd);
-
-	if (bypass)
-		dbg_info("%s: %d\n", __func__, bypass);
-
-	container->ignore_vsync = bypass;
-}
-
-static int get_frame_bypass(struct abd_protect *abd)
-{
-	struct decon_device *container = get_abd_container_of(abd);
-
-	return container->ignore_vsync;
-}
-#else
 static void set_frame_bypass(struct abd_protect *abd, unsigned int bypass)
 {
 	struct decon_device *container = get_abd_container_of(abd);
@@ -201,7 +169,6 @@ static int get_frame_bypass(struct abd_protect *abd)
 
 	return atomic_read(&container->bypass);
 }
-#endif
 
 #if defined(CONFIG_EXYNOS_DPU20)
 static void set_mipi_rw_bypass(struct abd_protect *abd, unsigned int flag)
@@ -367,13 +334,7 @@ void decon_abd_save_fto(struct abd_protect *abd, void *fence)
 	memset(event_log, 0, sizeof(struct fto_log));
 	event_log->stamp = local_clock();
 	event_log->ktime = ktime_get_real_seconds();
-#if defined(CONFIG_SOC_EXYNOS7885)
-	memcpy(&event_log->fence, fence, sizeof(struct sync_fence));
-#elif defined(CONFIG_SOC_EXYNOS9810)
 	memcpy(&event_log->fence, fence, sizeof(struct sync_file));
-#else
-	memcpy(&event_log->fence, fence, sizeof(struct dma_fence));
-#endif
 
 	if (!first->count) {
 		memset(first_log, 0, sizeof(struct fto_log));
@@ -801,19 +762,9 @@ static void decon_abd_print_fto(struct seq_file *m, struct abd_fto *trace)
 		tv = ns_to_timeval(log->stamp);
 		rtc_time_to_tm(log->ktime, &tm);
 
-#if defined(CONFIG_SOC_EXYNOS7885)
-		abd_printf(m, "%d-%02d-%02d %02d:%02d:%02d / %lu.%06lu / winid: %d, %s:%s\n",
-			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
-			(unsigned long)tv.tv_sec, tv.tv_usec, log->winid, log->fence.name, sync_status_str(atomic_read(&log->fence.status)));
-#elif defined(CONFIG_SOC_EXYNOS9810)
 		abd_printf(m, "%d-%02d-%02d %02d:%02d:%02d / %lu.%06lu / winid: %d, %s\n",
 			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
 			(unsigned long)tv.tv_sec, tv.tv_usec, log->winid, log->fence.name, sync_status_str(fence_get_status(log->fence.fence)));
-#else
-		abd_printf(m, "%d-%02d-%02d %02d:%02d:%02d / %lu.%06lu / winid: %d, %s\n",
-			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
-			(unsigned long)tv.tv_sec, tv.tv_usec, log->winid, sync_status_str(dma_fence_get_status_locked(&log->fence)));
-#endif
 	}
 }
 
@@ -854,20 +805,12 @@ static void decon_abd_print_udr(struct seq_file *m, struct abd_udr *trace)
 			if (!bts_info->dpp[idx].used)
 				continue;
 
-#if defined(CONFIG_SOC_EXYNOS7885)
-			abd_printf(m, "DPP[%d] (%d) b(%d) s(%4d %4d) d(%4d %4d %4d %4d)\n",
-				idx, bts_info->dpp[idx].idma_type, bts_info->dpp[idx].bpp,
-				bts_info->dpp[idx].src_w, bts_info->dpp[idx].src_h,
-				bts_info->dpp[idx].dst.x1, bts_info->dpp[idx].dst.x2,
-				bts_info->dpp[idx].dst.y1, bts_info->dpp[idx].dst.y2);
-#else
 			abd_printf(m, "DPP[%d] b(%d) s(%4d %4d) d(%4d %4d %4d %4d) r(%d)\n",
 				idx, bts_info->dpp[idx].bpp,
 				bts_info->dpp[idx].src_w, bts_info->dpp[idx].src_h,
 				bts_info->dpp[idx].dst.x1, bts_info->dpp[idx].dst.x2,
 				bts_info->dpp[idx].dst.y1, bts_info->dpp[idx].dst.y2,
 				bts_info->dpp[idx].rotation);
-#endif
 		}
 	}
 }

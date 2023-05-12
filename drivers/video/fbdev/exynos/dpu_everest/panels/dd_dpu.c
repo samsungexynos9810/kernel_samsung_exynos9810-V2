@@ -140,14 +140,9 @@ static void configure_lcd_info(u32 **point, struct dsim_device *dsim)
 	struct exynos_panel_info *lcd_info = &dsim->panel->lcd_info;
 #endif
 
-#if defined(CONFIG_SOC_EXYNOS7570) || defined(CONFIG_SOC_EXYNOS7870)
-	struct dsim_clks *clks = &dsim->clks_param.clks;
-#else
 	struct dsim_clks *clks = &dsim->clks;
-#endif
 
 	point[D_REFRESH]		=	&lcd_info->fps;
-#if defined(CONFIG_SOC_EXYNOS9610) || defined(CONFIG_SOC_EXYNOS9810)
 	point[D_PMSK_P]			=	&lcd_info->dphy_pms.p;
 	point[D_PMSK_M]			=	&lcd_info->dphy_pms.m;
 	point[D_PMSK_S]			=	&lcd_info->dphy_pms.s;
@@ -164,43 +159,16 @@ static void configure_lcd_info(u32 **point, struct dsim_device *dsim)
 	point[D_HIDDEN_FOUT_MASK]	=	&lcd_info->dphy_pms.fout_mask;
 	point[D_HIDDEN_RSEL]		=	&lcd_info->dphy_pms.rsel;
 #endif
-#else
-	point[D_PMS_P]			=	&lcd_info->dphy_pms.p;
-	point[D_PMS_M]			=	&lcd_info->dphy_pms.m;
-	point[D_PMS_S]			=	&lcd_info->dphy_pms.s;
-#endif
 
-#if defined(CONFIG_SOC_EXYNOS7570)
-	point[D_DSIM_HBP]		=	&lcd_info->dsim_hbp;
-	point[D_DSIM_HFP]		=	&lcd_info->dsim_hfp;
-	point[D_DSIM_HSA]		=	&lcd_info->dsim_hsa;
-	point[D_DSIM_VBP]		=	&lcd_info->dsim_vbp;
-	point[D_DSIM_VFP]		=	&lcd_info->dsim_vfp;
-	point[D_DSIM_VSA]		=	&lcd_info->dsim_vsa;
-	point[D_DECON_HBP]		=	&lcd_info->decon_hbp;
-	point[D_DECON_HFP]		=	&lcd_info->decon_hfp;
-	point[D_DECON_HSA]		=	&lcd_info->decon_hsa;
-	point[D_DECON_VBP]		=	&lcd_info->decon_vbp;
-	point[D_DECON_VFP]		=	&lcd_info->decon_vfp;
-	point[D_DECON_VSA]		=	&lcd_info->decon_vsa;
-#else
 	point[D_HBP]			=	&lcd_info->hbp;
 	point[D_HFP]			=	&lcd_info->hfp;
 	point[D_HSA]			=	&lcd_info->hsa;
 	point[D_VBP]			=	&lcd_info->vbp;
 	point[D_VFP]			=	&lcd_info->vfp;
 	point[D_VSA]			=	&lcd_info->vsa;
-#endif
 
-#if defined(CONFIG_SOC_EXYNOS7885)
-	point[D_VT_COMPENSATION]	=	&lcd_info->vt_compensation;
-	point[D_CMD_UNDERRUN_LP_REF]	=	&lcd_info->cmd_underrun_lp_ref;
-#endif
-
-#if defined(CONFIG_SOC_EXYNOS9610) || defined(CONFIG_SOC_EXYNOS9810)
 	point[D_VT_COMPENSATION]	=	&lcd_info->vt_compensation;
 	point[D_CMD_UNDERRUN_LP_REF]	=	lcd_info->cmd_underrun_lp_ref;
-#endif
 	point[D_HS_CLK]			=	&clks->hs_clk;
 	point[D_ESC_CLK]		=	&clks->esc_clk;
 }
@@ -211,17 +179,6 @@ static void configure_param(struct d_info *d)
 	struct decon_device *decon = get_decon_drvdata(0);
 
 	configure_lcd_info(d->point, dsim);
-
-#if defined(CONFIG_SOC_EXYNOS7570)
-	d->point[D_VCLK_NUMERATOR]	=	&decon->pdata->decon_clk.vclk_num;
-	d->point[D_VCLK_DENOMINATOR]	=	&decon->pdata->decon_clk.vclk_denom;
-	d->point[D_DISP_VCLK]		=	&decon->pdata->decon_clk.disp_vclk;
-#endif
-
-#if defined(CONFIG_SOC_EXYNOS7870)
-	d->point[D_DISP_PLL_CLK]	=	&decon->pdata->disp_pll_clk;
-	d->point[D_DISP_VCLK]		=	&decon->pdata->disp_vclk;
-#endif
 
 	if (decon->dt.dsi_mode == DSI_MODE_DUAL_DSI) {
 		dsim = get_dsim_drvdata(1);
