@@ -14,6 +14,7 @@
 #include <linux/mutex.h>
 #include <video/mipi_display.h>
 #include <linux/platform_device.h>
+#include <linux/display_state.h>
 
 #include "../disp_err.h"
 #include "../decon.h"
@@ -26,6 +27,12 @@
 static struct v4l2_subdev *panel_sd;
 static DEFINE_MUTEX(cmd_lock);
 struct panel_state *panel_state;
+
+bool display_on = true;
+bool is_display_on()
+{
+	return display_on;
+}
 
 static int dsim_ioctl_panel(struct dsim_device *dsim, u32 cmd, void *arg)
 {
@@ -435,6 +442,8 @@ static int common_lcd_displayon(struct dsim_device *dsim)
 		return ret;
 	}
 
+	display_on = true;
+
 	return 0;
 }
 
@@ -447,6 +456,8 @@ static int common_lcd_suspend(struct dsim_device *dsim)
 		dsim_err("DSIM:ERR:%s:failed to sleep in\n", __func__);
 		return ret;
 	}
+
+	display_on = false;
 
 	return 0;
 }
@@ -597,6 +608,7 @@ static int common_lcd_notify(struct dsim_device *dsim, void *data)
 	return 0;
 }
 
+#ifdef CONFIG_SUPPORT_DOZE
 static int common_lcd_doze(struct dsim_device *dsim)
 {
 	int ret;
@@ -622,15 +634,16 @@ static int common_lcd_doze_suspend(struct dsim_device *dsim)
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SUPPORT_DSU
-static int common_lcd_dsu(struct dsim_device *dsim, int mres_idx)
+static int common_lcd_dsu(struct dsim_device *dsim, struct dsu_info *dsu)
 {
 	int ret = 0;
 
-	ret = dsim_ioctl_panel(dsim, PANEL_IOC_SET_DSU, &mres_idx);
+	ret = dsim_ioctl_panel(dsim, PANEL_IOC_SET_DSU, dsu);
 	if (ret) {
-		dsim_err("DSIM:ERR:%s:failed to set multi-resolution\n", __func__);
+		dsim_err("DSIM:ERR:%s:failed to set dsu\n", __func__);
 		goto dsu_exit;
 	}
 
@@ -658,9 +671,11 @@ struct dsim_lcd_driver common_mipi_lcd_driver = {
 	.displayon	= common_lcd_displayon,
 	.notify		= common_lcd_notify,
 	.set_error_cb	= common_lcd_set_error_cb,
+#ifdef CONFIG_SUPPORT_DOZE
 	.doze		= common_lcd_doze,
 	.doze_suspend	= common_lcd_doze_suspend,
+#endif
 #ifdef CONFIG_SUPPORT_DSU
-	.mres = common_lcd_dsu,
+	.dsu = common_lcd_dsu,
 #endif
 };

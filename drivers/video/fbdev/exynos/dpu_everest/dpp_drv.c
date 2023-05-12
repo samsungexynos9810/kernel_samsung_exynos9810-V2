@@ -267,33 +267,6 @@ void dpp_op_timer_handler(unsigned long arg)
 	dpp_info("DPP[%d] irq hasn't been occured", dpp->id);
 }
 
-static int dpp_wb_wait_for_framedone(struct dpp_device *dpp)
-{
-	int ret;
-	int done_cnt;
-
-	if (dpp->id != ODMA_WB) {
-		dpp_err("waiting for dpp's framedone is only for writeback\n");
-		return -EINVAL;
-	}
-
-	if (dpp->state == DPP_STATE_OFF) {
-		dpp_err("dpp%d power is off state(%d)\n", dpp->id, dpp->state);
-		return -EPERM;
-	}
-
-	done_cnt = dpp->d.done_count;
-	/* TODO: dma framedone should be wait */
-	ret = wait_event_interruptible_timeout(dpp->framedone_wq,
-			(done_cnt != dpp->d.done_count), msecs_to_jiffies(17));
-	if (ret == 0) {
-		dpp_err("timeout of dpp%d framedone\n", dpp->id);
-		return -ETIMEDOUT;
-	}
-
-	return 0;
-}
-
 static void dpp_get_params(struct dpp_device *dpp, struct dpp_params_info *p)
 {
 	u64 src_w, src_h, dst_w, dst_h;
@@ -658,7 +631,7 @@ static int dpp_check_limitation(struct dpp_device *dpp, struct dpp_params_info *
 	}
 
 	/* HDR channel limitation */
-	if ((p->hdr != DPP_HDR_OFF) && p->rot) {
+	if ((p->hdr != DPP_HDR_OFF) && (p->rot > DPP_ROT_180)) {
 		dpp_err("Not support [HDR+ROTATION] at the same time in DPP%d\n",
 			dpp->id);
 		return -EINVAL;
@@ -691,8 +664,7 @@ static int dpp_set_config(struct dpp_device *dpp)
 		dpp_reg_init(dpp->id);
 
 		enable_irq(dpp->res.dma_irq);
-		if (dpp->id != ODMA_WB)
-			enable_irq(dpp->res.irq);
+		enable_irq(dpp->res.irq);
 
 		/* DMA_debug registers enable */
 		/*
@@ -719,10 +691,24 @@ static int dpp_set_config(struct dpp_device *dpp)
 	dpp_dbg("dpp%d configuration\n", dpp->id);
 
 	dpp->state = DPP_STATE_ON;
+	/* to prevent irq storm, irq enable is moved here */
+	dpp_reg_irq_enable(dpp->id);
 err:
 	mutex_unlock(&dpp->lock);
 	return ret;
 }
+
+void dpp_release_rpm_hold(u32 id)
+{
+	struct dpp_device *dpp = get_dpp_drvdata(id);
+
+	if (true == dpp->hold_rpm_on_boot) {
+		pm_runtime_put_sync(dpp->dev);
+		dpp->hold_rpm_on_boot = false;
+		dpp_info("released dpp,hold-rpm-on-boot\n");
+	}
+}
+EXPORT_SYMBOL(dpp_release_rpm_hold);
 
 static int dpp_stop(struct dpp_device *dpp, bool reset)
 {
@@ -738,8 +724,7 @@ static int dpp_stop(struct dpp_device *dpp, bool reset)
 	DPU_EVENT_LOG(DPU_EVT_DPP_STOP, &dpp->sd, ktime_set(0, 0));
 
 	disable_irq(dpp->res.dma_irq);
-	if (dpp->id != ODMA_WB)
-		disable_irq(dpp->res.irq);
+	disable_irq(dpp->res.irq);
 
 	del_timer(&dpp->d.op_timer);
 	dpp_reg_deinit(dpp->id, reset);
@@ -781,10 +766,6 @@ static long dpp_subdev_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg
 
 	case DPP_DUMP:
 		dpp_dump(dpp);
-		break;
-
-	case DPP_WB_WAIT_FOR_FRAMEDONE:
-		ret = dpp_wb_wait_for_framedone(dpp);
 		break;
 
 	case DPP_WAIT_IDLE:
@@ -885,13 +866,8 @@ static irqreturn_t dma_irq_handler(int irq, void *priv)
 
 	irqs = dma_reg_get_irq_status(dpp->id);
 	/* CFG_ERR_STATE SFR is cleared when clearing pending bits */
-	if (dpp->id == ODMA_WB) {
-		reg_id = ODMA_CFG_ERR_STATE;
-		irq_pend = ODMA_CONFIG_ERROR;
-	} else {
-		reg_id = IDMA_CFG_ERR_STATE;
-		irq_pend = IDMA_CONFIG_ERROR;
-	}
+	reg_id = IDMA_CFG_ERR_STATE;
+	irq_pend = IDMA_CONFIG_ERROR;
 
 	if (irqs & irq_pend)
 		cfg_err = dma_read(dpp->id, reg_id);
@@ -934,75 +910,23 @@ static irqreturn_t dma_irq_handler(int irq, void *priv)
 					dpp->id, irqs);
 			dpp_err("CFG_ERR_STATE = (0x%x)\n", cfg_err);
 			/* TODO: add to read config error information */
-			dpp_dump(dpp);
-			goto irq_end;
-		}
-
-		if ((irqs & ODMA_WRITE_SLAVE_ERROR) ||
-			       (irqs & ODMA_STATUS_DEADLOCK_IRQ)) {
-			dpp_err("dma%d error irq occur(0x%x)\n", dpp->id, irqs);
-			dpp_dump(dpp);
-			goto irq_end;
-		}
-
-		if (irqs & ODMA_STATUS_FRAMEDONE_IRQ) {
-			dpp->d.done_count++;
-			wake_up_interruptible_all(&dpp->framedone_wq);
-			DPU_EVENT_LOG(DPU_EVT_DPP_FRAMEDONE, &dpp->sd,
-					ktime_set(0, 0));
-			goto irq_end;
-		}
-	} else {
-		if (irqs & IDMA_RECOVERY_START_IRQ) {
-			DPU_EVENT_LOG(DPU_EVT_DMA_RECOVERY, &dpp->sd,
-					ktime_set(0, 0));
-			val = (u32)dpp->config->dpp_parm.comp_src;
-			dpp->d.recovery_cnt++;
-			dpp_info("dma%d recovery start(0x%x).. [src=%s], cnt[%d %d]\n",
-					dpp->id, irqs,
-					val == DPP_COMP_SRC_G2D ? "G2D" : "GPU",
-					get_dpp_drvdata(IDMA_VGF0)->d.recovery_cnt,
-					get_dpp_drvdata(IDMA_VGF1)->d.recovery_cnt);
-			goto irq_end;
-		}
-
-		if ((irqs & IDMA_AFBC_TIMEOUT_IRQ) ||
-				(irqs & IDMA_READ_SLAVE_ERROR) ||
-				(irqs & IDMA_STATUS_DEADLOCK_IRQ)) {
-			dpp_err("dma%d error irq occur(0x%x)\n", dpp->id, irqs);
-			dpp_dump(dpp);
-			goto irq_end;
-		}
-
-		if (irqs & IDMA_CONFIG_ERROR) {
-			val = IDMA_CFG_ERR_IMG_HEIGHT
-				| IDMA_CFG_ERR_IMG_HEIGHT_ROTATION;
-			if (cfg_err & val)
-				dpp_err("dma%d config: img_height(0x%x)\n",
-						dpp->id, irqs);
-			else {
-				dpp_err("dma%d config error occur(0x%x)\n",
-						dpp->id, irqs);
-				dpp_err("CFG_ERR_STATE = (0x%x)\n", cfg_err);
-				/* TODO: add to read config error information */
-				/*
-				 * Disabled because this can cause slow update
-				 * if conditions happen very often
-				 *	dpp_dump(dpp);
-				 */
-			}
-			goto irq_end;
-		}
-
-		if (irqs & IDMA_STATUS_FRAMEDONE_IRQ) {
 			/*
-			 * TODO: Normally, DMA framedone occurs before
-			 * DPP framedone. But DMA framedone can occur in case
-			 * of AFBC crop mode
+			 * Disabled because this can cause slow update
+			 * if conditions happen very often
+			 *	dpp_dump(dpp);
 			 */
-			DPU_EVENT_LOG(DPU_EVT_DMA_FRAMEDONE, &dpp->sd, ktime_set(0, 0));
-			goto irq_end;
 		}
+		goto irq_end;
+	}
+
+	if (irqs & IDMA_STATUS_FRAMEDONE_IRQ) {
+		/*
+		 * TODO: Normally, DMA framedone occurs before
+		 * DPP framedone. But DMA framedone can occur in case
+		 * of AFBC crop mode
+		 */
+		DPU_EVENT_LOG(DPU_EVT_DMA_FRAMEDONE, &dpp->sd, ktime_set(0, 0));
+		goto irq_end;
 	}
 
 irq_end:
@@ -1021,6 +945,14 @@ static void dpp_parse_dt(struct dpp_device *dpp, struct device *dev)
 	dpp_info("dpp(%d) probe start..\n", dpp->id);
 
 	dpp->dev = dev;
+
+	if ((dpp->id == IDMA_G0) &&
+		(of_property_read_bool(dev->of_node, "dpp,hold-rpm-on-boot"))) {
+		dpp->hold_rpm_on_boot = true;
+		dpp_info("dpp,hold-rpm-on-boot\n");
+	} else {
+		dpp->hold_rpm_on_boot = false;
+	}
 }
 
 static int dpp_init_resources(struct dpp_device *dpp, struct platform_device *pdev)
@@ -1081,31 +1013,29 @@ static int dpp_init_resources(struct dpp_device *dpp, struct platform_device *pd
 	dpp_info("dma irq no = %lld\n", res->start);
 
 	dpp->res.dma_irq = res->start;
-	ret = devm_request_irq(dpp->dev, res->start, dma_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, dpp);
+	ret = devm_request_irq(dpp->dev, res->start, dma_irq_handler, 0,
+			pdev->name, dpp);
 	if (ret) {
 		dpp_err("failed to install DPU DMA irq\n");
 		return -EINVAL;
 	}
 	disable_irq(dpp->res.dma_irq);
 
-	if (dpp->id != ODMA_WB) {
-		res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
-		if (!res) {
-			dpp_err("failed to get dpp irq resource\n");
-			return -ENOENT;
-		}
-		dpp_info("dpp irq no = %lld\n", res->start);
-
-		dpp->res.irq = res->start;
-		ret = devm_request_irq(dpp->dev, res->start, dpp_irq_handler,
-				IRQF_PERF_CRITICAL, pdev->name, dpp);
-		if (ret) {
-			dpp_err("failed to install DPP irq\n");
-			return -EINVAL;
-		}
-		disable_irq(dpp->res.irq);
+	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+	if (!res) {
+		dpp_err("failed to get dpp irq resource\n");
+		return -ENOENT;
 	}
+	dpp_info("dpp irq no = %lld\n", res->start);
+
+	dpp->res.irq = res->start;
+	ret = devm_request_irq(dpp->dev, res->start, dpp_irq_handler, 0,
+			pdev->name, dpp);
+	if (ret) {
+		dpp_err("failed to install DPP irq\n");
+		return -EINVAL;
+	}
+	disable_irq(dpp->res.irq);
 
 	return 0;
 }
@@ -1132,7 +1062,6 @@ static int dpp_probe(struct platform_device *pdev)
 	spin_lock_init(&dpp->slock);
 	spin_lock_init(&dpp->dma_slock);
 	mutex_init(&dpp->lock);
-	init_waitqueue_head(&dpp->framedone_wq);
 
 	ret = dpp_init_resources(dpp, pdev);
 	if (ret)
@@ -1143,6 +1072,8 @@ static int dpp_probe(struct platform_device *pdev)
 	setup_timer(&dpp->d.op_timer, dpp_op_timer_handler, (unsigned long)dpp);
 
 	pm_runtime_enable(dev);
+	if (dpp->hold_rpm_on_boot == true)
+		pm_runtime_get_sync(dev);
 
 	dpp->state = DPP_STATE_OFF;
 	dpp_info("dpp%d is probed successfully\n", dpp->id);
@@ -1189,7 +1120,11 @@ static int dpp_runtime_resume(struct device *dev)
 }
 
 static const struct of_device_id dpp_of_match[] = {
+#if defined(CONFIG_SOC_EXYNOS9810)
 	{ .compatible = "samsung,exynos9-dpp" },
+#else
+	{ .compatible = "samsung,exynos8-dpp" },
+#endif
 	{},
 };
 MODULE_DEVICE_TABLE(of, dpp_of_match);
@@ -1216,7 +1151,7 @@ static int dpp_register(void)
 	return platform_driver_register(&dpp_driver);
 }
 
-device_initcall_sync(dpp_register);
+device_initcall(dpp_register);
 
 MODULE_AUTHOR("Jaehoe Yang <jaehoe.yang@samsung.com>");
 MODULE_AUTHOR("Minho Kim <m8891.kim@samsung.com>");

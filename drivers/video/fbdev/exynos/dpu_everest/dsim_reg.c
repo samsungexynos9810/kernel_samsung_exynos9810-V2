@@ -9,7 +9,7 @@
  * published by the Free Software Foundation.
  */
 
-#include "../dsim.h"
+#include "dsim.h"
 
 /* These definitions are need to guide from AP team */
 #define DSIM_STOP_STATE_CNT		0xA
@@ -17,7 +17,7 @@
 #define DSIM_LP_RX_TIMEOUT		0xffff
 #define DSIM_MULTI_PACKET_CNT		0xffff
 #define DSIM_PLL_STABLE_TIME		0x682A
-#define DSIM_FIFOCTRL_THRESHOLD		0x1 /* 1 ~ 32 */
+#define DSIM_FIFOCTRL_THRESHOLD		10 /* 1 ~ 32 */
 
 /* If below values depend on panel. These values wil be move to panel file.
  * And these values are valid in case of video mode only.
@@ -299,7 +299,11 @@ const u32 dphy_timing[][10] = {
 	{670, 26, 9, 15, 41, 28, 3, 34, 20, 3},
 	{660, 26, 9, 15, 40, 27, 3, 33, 19, 3},
 	{650, 26, 8, 15, 40, 27, 2, 33, 19, 3},
+#if defined(CONFIG_EXYNOS_DECON_LCD_HX83102E_GTACTIVE3)
+	{640, 25, 8, 15, 40, 19, 2, 33, 16, 3},
+#else
 	{640, 25, 8, 15, 40, 26, 2, 33, 19, 3},
+#endif
 	{630, 25, 8, 15, 39, 26, 2, 32, 18, 3},
 	{620, 24, 8, 15, 39, 26, 2, 32, 18, 3},
 	{610, 24, 8, 15, 39, 25, 2, 32, 18, 3},
@@ -1684,8 +1688,12 @@ void dsim_reg_set_config(u32 id, struct decon_lcd *lcd_info, u32 data_lane_cnt,
 	dsim_reg_set_stop_state_cnt(id);
 
 	if (lcd_info->mode == DECON_MIPI_COMMAND_MODE) {
+#ifdef CONFIG_SUPPORT_DSU
 		/* DSU_MODE_1 is used in stead of 1 in MCD */
 		idx = lcd_info->mres_mode - DSU_MODE_1;
+#else
+		idx = lcd_info->mres_mode - 1;
+#endif
 		dsim_reg_set_cm_underrun_lp_ref(id,
 				lcd_info->cmd_underrun_lp_ref[idx]);
 	}
@@ -2213,42 +2221,45 @@ void dsim_reg_stop(u32 id, u32 lanes)
 	dsim_reg_set_link_clock(id, 0);
 	dsim_reg_set_lanes(id, lanes, 0);
 	dsim_reg_set_esc_clk_on_lane(id, 0, lanes);
-	dsim_reg_enable_word_clock(id, 0);
+//	dsim_reg_enable_word_clock(id, 0);
 	dsim_reg_set_clocks(id, NULL, NULL, 0);
 	dsim_reg_sw_reset(id);
 }
 
-void dsim_reg_set_mres(u32 id, struct decon_lcd *lcd_info)
+#ifdef CONFIG_SUPPORT_DSU
+void dsim_reg_set_dsu(u32 id, struct decon_lcd *lcd_info)
 {
 	u32 threshold;
 	u32 num_of_slice;
 	u32 num_of_transfer;
 	int idx;
 
-	if (lcd_info->mode != DECON_MIPI_COMMAND_MODE) {
-		dsim_info("%s: mode[%d] doesn't support multi resolution\n",
-				__func__, lcd_info->mode);
-		return;
-	}
+	threshold = lcd_info->xres;
+	num_of_transfer = lcd_info->xres * lcd_info->yres / threshold;
 
-	idx = lcd_info->mres_mode;
+	dsim_info("%s : xres : %d, yres : %d\n",
+		__func__, lcd_info->xres, lcd_info->yres);
+
+	if (lcd_info->mode != DECON_MIPI_COMMAND_MODE)
+		return;
+
+	idx = lcd_info->mres_mode - DSU_MODE_1;
 	dsim_reg_set_cm_underrun_lp_ref(id, lcd_info->cmd_underrun_lp_ref[idx]);
 
 	if (lcd_info->dsc_enabled) {
 		threshold = lcd_info->xres / 3;
 		num_of_transfer = lcd_info->xres * lcd_info->yres / threshold / 3;
-	} else {
-		threshold = lcd_info->xres;
-		num_of_transfer = lcd_info->xres * lcd_info->yres / threshold;
 	}
-
 	dsim_reg_set_threshold(id, threshold);
+
 	dsim_reg_set_vresol(id, lcd_info->yres);
 	dsim_reg_set_hresol(id, lcd_info->xres, lcd_info);
 	dsim_reg_set_porch(id, lcd_info);
+
 	dsim_reg_set_num_of_transfer(id, num_of_transfer);
 
 	dsim_reg_enable_dsc(id, lcd_info->dsc_enabled);
+
 	if (lcd_info->dsc_enabled) {
 		dsim_dbg("%s: dsc configuration is set\n", __func__);
 		dsim_reg_set_num_of_slice(id, lcd_info->dsc_slice_num);
@@ -2260,4 +2271,6 @@ void dsim_reg_set_mres(u32 id, struct decon_lcd *lcd_info)
 		dsim_reg_print_size_of_slice(id);
 	}
 }
+#endif
+
 

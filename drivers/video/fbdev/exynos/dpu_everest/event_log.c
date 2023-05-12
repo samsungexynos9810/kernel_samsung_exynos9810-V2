@@ -75,7 +75,7 @@ static inline void dpu_event_log_dsim
 	(dpu_event_t type, struct v4l2_subdev *sd, ktime_t time)
 {
 	struct dsim_device *dsim = container_of(sd, struct dsim_device, sd);
-	struct decon_device *decon = get_decon_drvdata(dsim->id);
+	struct decon_device *decon = get_decon_drvdata(0);
 	int idx = atomic_inc_return(&decon->d.event_log_idx) % DPU_EVENT_LOG_MAX;
 	struct dpu_log *log;
 
@@ -313,11 +313,6 @@ void DPU_EVENT_LOG_WINCON(struct v4l2_subdev *sd, struct decon_reg_data *regs)
 				sizeof(struct decon_win_config));
 	}
 
-	/* write-back case : last window */
-	if (decon->dt.out_type == DECON_OUT_WB)
-		memcpy(&log->data.reg.win_config[win], &regs->dpp_config[win],
-				sizeof(struct decon_win_config));
-
 	if (window_updated) {
 		log->data.reg.win.x = regs->dpp_config[win].dst.x;
 		log->data.reg.win.y = regs->dpp_config[win].dst.y;
@@ -336,8 +331,7 @@ extern void *return_address(int);
 /* Common API to log a event related with DSIM COMMAND */
 void DPU_EVENT_LOG_CMD(struct v4l2_subdev *sd, u32 cmd_id, unsigned long data)
 {
-	struct dsim_device *dsim = container_of(sd, struct dsim_device, sd);
-	struct decon_device *decon = get_decon_drvdata(dsim->id);
+	struct decon_device *decon = get_decon_drvdata(0);
 	int idx, i;
 	struct dpu_log *log;
 
@@ -794,49 +788,6 @@ static const struct file_operations decon_win_fops = {
 	.release = seq_release,
 };
 
-static int decon_debug_mres_show(struct seq_file *s, void *unused)
-{
-	seq_printf(s, "%u\n", dpu_mres_log_level);
-
-	return 0;
-}
-
-static int decon_debug_mres_open(struct inode *inode, struct file *file)
-{
-	return single_open(file, decon_debug_mres_show, inode->i_private);
-}
-
-static ssize_t decon_debug_mres_write(struct file *file, const char __user *buf,
-		size_t count, loff_t *f_ops)
-{
-	char *buf_data;
-	int ret;
-
-	buf_data = kmalloc(count, GFP_KERNEL);
-	if (buf_data == NULL)
-		return count;
-
-	ret = copy_from_user(buf_data, buf, count);
-	if (ret < 0)
-		goto out;
-
-	ret = sscanf(buf_data, "%u", &dpu_mres_log_level);
-	if (ret < 0)
-		goto out;
-
-out:
-	kfree(buf_data);
-	return count;
-}
-
-static const struct file_operations decon_mres_fops = {
-	.open = decon_debug_mres_open,
-	.write = decon_debug_mres_write,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = seq_release,
-};
-
 static int decon_systrace_show(struct seq_file *s, void *unused)
 {
 	seq_printf(s, "%u\n", decon_systrace_enable);
@@ -986,7 +937,7 @@ static int decon_debug_cmd_lp_ref_show(struct seq_file *s, void *unused)
 	int i;
 
 	/* DSU_MODE_1 is used in stead of 1 in MCD */
-	seq_printf(s, "%u\n", dsim->lcd_info.mres_mode);
+	seq_printf(s, "%u\n", dsim->lcd_info.mres_mode - 1);
 
 	for (i = 0; i < dsim->lcd_info.dt_lcd_mres.mres_number; i++)
 		seq_printf(s, "%u\n", dsim->lcd_info.cmd_underrun_lp_ref[i]);
@@ -1022,7 +973,7 @@ static ssize_t decon_debug_cmd_lp_ref_write(struct file *file, const char __user
 
 	dsim = get_dsim_drvdata(0);
 
-	idx = dsim->lcd_info.mres_mode;
+	idx = dsim->lcd_info.mres_mode - 1;
 	dsim->lcd_info.cmd_underrun_lp_ref[idx] = cmd_lp_ref;
 
 out:
@@ -1134,13 +1085,6 @@ int decon_create_debugfs(struct decon_device *decon)
 				decon->d.debug_root, NULL, &decon_win_fops);
 		if (!decon->d.debug_win) {
 			decon_err("failed to create win update log level file\n");
-			ret = -ENOENT;
-			goto err_debugfs;
-		}
-		decon->d.debug_mres = debugfs_create_file("mres_log", 0444,
-				decon->d.debug_root, NULL, &decon_mres_fops);
-		if (!decon->d.debug_mres) {
-			decon_err("failed to create mres log level file\n");
 			ret = -ENOENT;
 			goto err_debugfs;
 		}

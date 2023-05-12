@@ -424,8 +424,6 @@ void decon_create_timeline(struct decon_device *decon, char *name)
 #else
 	decon->timeline_max = 1;
 #endif
-	if (decon->dt.out_type == DECON_OUT_WB)
-		decon->timeline_max = 0;
 }
 
 int decon_get_valid_fd(void)
@@ -571,8 +569,13 @@ void __iomem *dpu_get_sysreg_addr(void)
 
 	if (of_have_populated_dt()) {
 		struct device_node *nd;
+#if defined(CONFIG_SOC_EXYNOS9810)
 		nd = of_find_compatible_node(NULL, NULL,
 				"samsung,exynos9-disp_ss");
+#else
+		nd = of_find_compatible_node(NULL, NULL,
+				"samsung,exynos8-disp_ss");
+#endif
 		if (!nd) {
 			decon_err("failed find compatible node(sysreg-disp)");
 			return NULL;
@@ -653,9 +656,6 @@ static int decon_get_protect_id(int dma_id)
 	case IDMA_VGF1:
 		prot_id = PROT_VGRF;
 		break;
-	case ODMA_WB:
-		prot_id = PROT_WB1;
-		break;
 	default:
 		decon_err("Unknown DMA_ID (%d)\n", dma_id);
 		break;
@@ -699,11 +699,6 @@ void decon_set_protected_content(struct decon_device *decon,
 		cur_protect_bits |=
 			(regs->protection[i] << regs->dpp_config[i].idma_type);
 	}
-
-	/* ODMA protection config (WB: writeback) */
-	if (decon->dt.out_type == DECON_OUT_WB)
-		if (regs)
-			cur_protect_bits |= (regs->protection[MAX_DECON_WIN] << ODMA_WB);
 
 	if (decon->prev_protection_bitmask != cur_protect_bits) {
 

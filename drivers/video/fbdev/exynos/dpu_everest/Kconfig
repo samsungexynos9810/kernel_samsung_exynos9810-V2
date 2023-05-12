@@ -47,6 +47,11 @@ config EXYNOS_ZEBU_EMUL_DISP
 	depends on EXYNOS_EVEREST
 	default n
 
+config EXYNOS_DUAL_DSI
+	bool "Dual Dsi"
+	depends on EXYNOS_MIPI_DSIM
+	default n
+
 config FB_WINDOW_UPDATE
         bool "DECON window update mode"
         depends on EXYNOS_EVEREST
@@ -59,7 +64,7 @@ config DECON_BLOCKING_MODE
 
 config DECON_EVENT_LOG
 	bool "Display sub-system event logger (DECON/DSIM/DPP)"
-        depends on EXYNOS_EVEREST
+        depends on DEBUG_INFO && EXYNOS_EVEREST
         default y
 
 config DECON_HIBER
@@ -71,6 +76,11 @@ config EXYNOS_HIBERNATION_THREAD
 	bool "DECON hiber mode using single thread"
         depends on DECON_HIBER
         default n
+
+config SUPPORT_DOZE
+	bool "Suppot Doze mode to aod service"
+		depends on EXYNOS_EVEREST
+		default n
 
 config EXYNOS_AFBC
 	bool "Display sub-system AFBC stream"
@@ -107,21 +117,15 @@ config DPU_2_0_RELEASE_FENCES
         depends on EXYNOS_EVEREST
         default n
 
-
 config SUPPORT_DSU
 	tristate "Support Dynamic Scale Up (Multi-Resolution)"
 	depends on EXYNOS_EVEREST
 	default n
 
-config EXYNOS_MULTIRESOLUTION
-	bool "Multi resolution LCD support"
-	depends on EXYNOS_EVEREST && FB_WINDOW_UPDATE
-	default y
-
-config EXYNOS_VIRTUAL_DISPLAY
-	bool "Virtual display mode"
-	depends on EXYNOS_EVEREST
-
+config USE_DISPLAYPORT_CCIC_EVENT_QUEUE
+	bool "use queue for CCIC notifications"
+        depends on EXYNOS_DISPLAYPORT
+        default n
 endif
 
 source "drivers/video/fbdev/exynos/dpu_everest/panels/Kconfig"

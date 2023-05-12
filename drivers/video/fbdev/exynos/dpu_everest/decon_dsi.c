@@ -103,6 +103,7 @@ static int decon_devfreq_change_task(void *data)
 }
 #endif
 
+#if defined(CONFIG_SOC_EXYNOS9810)
 int decon_register_irq(struct decon_device *decon)
 {
 	struct device *dev = decon->dev;
@@ -115,7 +116,7 @@ int decon_register_irq(struct decon_device *decon)
 	/* 1: FRAME START */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 	ret = devm_request_irq(dev, res->start, decon_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+			0, pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install FRAME START irq\n");
 		return ret;
@@ -124,7 +125,7 @@ int decon_register_irq(struct decon_device *decon)
 	/* 2: FRAME DONE */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
 	ret = devm_request_irq(dev, res->start, decon_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+			0, pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install FRAME DONE irq\n");
 		return ret;
@@ -133,7 +134,7 @@ int decon_register_irq(struct decon_device *decon)
 	/* 3: EXTRA: resource conflict, timeout and error irq */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 2);
 	ret = devm_request_irq(dev, res->start, decon_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+			0, pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install EXTRA irq\n");
 		return ret;
@@ -155,6 +156,72 @@ int decon_register_irq(struct decon_device *decon)
 
 	return ret;
 }
+#else
+int decon_register_irq(struct decon_device *decon)
+{
+	struct device *dev = decon->dev;
+	struct platform_device *pdev;
+	struct resource *res;
+	int ret = 0;
+
+	pdev = container_of(dev, struct platform_device, dev);
+
+	if (decon->dt.psr_mode == DECON_VIDEO_MODE) {
+		/* Get IRQ resource and register IRQ handler. */
+		/* 0: FIFO irq */
+		res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
+		ret = devm_request_irq(dev, res->start, decon_irq_handler, 0,
+				pdev->name, decon);
+		if (ret) {
+			decon_err("failed to install FIFO irq\n");
+			return ret;
+		}
+	}
+
+	/* 1: FRAME START */
+	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
+	ret = devm_request_irq(dev, res->start, decon_irq_handler,
+			0, pdev->name, decon);
+	if (ret) {
+		decon_err("failed to install FRAME START irq\n");
+		return ret;
+	}
+
+	/* 2: FRAME DONE */
+	res = platform_get_resource(pdev, IORESOURCE_IRQ, 2);
+	ret = devm_request_irq(dev, res->start, decon_irq_handler,
+			0, pdev->name, decon);
+	if (ret) {
+		decon_err("failed to install FRAME DONE irq\n");
+		return ret;
+	}
+
+	/* 3: EXTRA: resource conflict, timeout and error irq */
+	res = platform_get_resource(pdev, IORESOURCE_IRQ, 3);
+	ret = devm_request_irq(dev, res->start, decon_irq_handler,
+			0, pdev->name, decon);
+	if (ret) {
+		decon_err("failed to install EXTRA irq\n");
+		return ret;
+	}
+
+	/*
+	 * If below IRQs are needed, please define irq number sequence
+	 * like below
+	 *
+	 * DECON0
+	 * 4: DIMMING_START
+	 * 5: DIMMING_END
+	 * 6: DQE_DIMMING_START
+	 * 7: DQE_DIMMING_END
+	 *
+	 * DECON2
+	 * 4: VSTATUS
+	 */
+
+	return ret;
+}
+#endif
 
 int decon_get_clocks(struct decon_device *decon)
 {
@@ -489,7 +556,7 @@ int decon_create_vsync_thread(struct decon_device *decon)
 	}
 
 	sprintf(name, "decon%d-vsync", decon->id);
-	decon->vsync.thread = kthread_run_perf_critical(decon_vsync_thread, decon, name);
+	decon->vsync.thread = kthread_run(decon_vsync_thread, decon, name);
 	if (IS_ERR_OR_NULL(decon->vsync.thread)) {
 		decon_err("failed to run vsync thread\n");
 		decon->vsync.thread = NULL;
@@ -551,7 +618,7 @@ int decon_create_fsync_thread(struct decon_device *decon)
 	}
 
 	sprintf(name, "decon%d-fsync", decon->id);
-	decon->fsync.thread = kthread_run_perf_critical(decon_fsync_thread, decon, name);
+	decon->fsync.thread = kthread_run(decon_fsync_thread, decon, name);
 	if (IS_ERR_OR_NULL(decon->fsync.thread)) {
 		decon_err("failed to run fsync thread\n");
 		decon->fsync.thread = NULL;
@@ -852,6 +919,7 @@ int decon_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
 	struct decon_win_config config;
 	int ret = 0;
 	struct decon_mode_info psr;
+	u32 dual_sz = 1;
 
 	if (decon->dt.out_type != DECON_OUT_DSI) {
 		decon_warn("%s: decon%d unspported on out_type(%d)\n",
@@ -886,6 +954,8 @@ int decon_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
 					var->bits_per_pixel);
 			return -EINVAL;
 	}
+	if (decon->dt.dsi_mode == DSI_MODE_DUAL_DSI)
+		dual_sz = 2;
 
 	config.dpp_parm.addr[0] = info->fix.smem_start;
 	config.src.x =  var->xoffset;
@@ -896,7 +966,7 @@ int decon_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
 	config.src.f_h = var->yres_virtual;
 	config.dst.w = config.src.w;
 	config.dst.h = config.src.h;
-	config.dst.f_w = decon->lcd_info->xres;
+	config.dst.f_w = decon->lcd_info->xres * dual_sz;
 	config.dst.f_h = decon->lcd_info->yres;
 	if (decon_check_limitation(decon, decon->dt.dft_win, &config) < 0)
 		return -EINVAL;
@@ -1073,17 +1143,13 @@ int decon_enter_hiber(struct decon_device *decon)
 	decon_reg_clear_int_all(decon->id);
 
 	/* DMA protection disable must be happen on dpp domain is alive */
-	if (decon->dt.out_type != DECON_OUT_WB) {
 #if defined(CONFIG_EXYNOS_CONTENT_PATH_PROTECTION)
-		decon_set_protected_content(decon, NULL);
+	decon_set_protected_content(decon, NULL);
 #endif
-		decon->cur_using_dpp = 0;
-		decon_dpp_stop(decon, false);
-	}
+	decon->cur_using_dpp = 0;
+	decon_dpp_stop(decon, false);
 
-#if defined(CONFIG_EXYNOS9810_BTS)
 	decon->bts.ops->bts_release_bw(decon);
-#endif
 
 	ret = decon_set_out_sd_state(decon, DECON_STATE_HIBER);
 	if (ret < 0) {
@@ -1157,7 +1223,7 @@ int decon_register_hiber_work(struct decon_device *decon)
 	atomic_set(&decon->hiber.trig_cnt, 0);
 	atomic_set(&decon->hiber.block_cnt, 0);
 
-	decon->hiber.thread = kthread_run_perf_critical(decon_hiber_thread,
+	decon->hiber.thread = kthread_run(decon_hiber_thread,
 			decon, "decon_hiber");
 	if (IS_ERR(decon->hiber.thread)) {
 		decon->hiber.thread = NULL;
@@ -1202,7 +1268,7 @@ int decon_register_hiber_work(struct decon_device *decon)
 	atomic_set(&decon->hiber.block_cnt, 0);
 
 	kthread_init_worker(&decon->hiber.worker);
-	decon->hiber.thread = kthread_run_perf_critical(kthread_worker_fn,
+	decon->hiber.thread = kthread_run(kthread_worker_fn,
 			&decon->hiber.worker, "decon_hiber");
 	if (IS_ERR(decon->hiber.thread)) {
 		decon->hiber.thread = NULL;

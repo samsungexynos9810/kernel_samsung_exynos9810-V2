@@ -234,6 +234,7 @@ void dpu_bts_calc_bw(struct decon_device *decon, struct decon_reg_data *regs)
 	struct bts_decon_info bts_info;
 	enum dpp_rotate rot;
 	int idx, i;
+	u32 used_cnt = 0;
 
 	if (!decon->bts.enabled)
 		return;
@@ -246,6 +247,7 @@ void dpu_bts_calc_bw(struct decon_device *decon, struct decon_reg_data *regs)
 		if (config[i].state == DECON_WIN_STATE_BUFFER) {
 			idx = config[i].idma_type;
 			bts_info.dpp[idx].used = true;
+			used_cnt++;
 		} else {
 			continue;
 		}
@@ -276,6 +278,7 @@ void dpu_bts_calc_bw(struct decon_device *decon, struct decon_reg_data *regs)
 	bts_info.lcd_h = decon->lcd_info->yres;
 	decon->bts.total_bw = bts_calc_bw(decon->bts.type, &bts_info);
 	memcpy(&decon->bts.bts_info, &bts_info, sizeof(struct bts_decon_info));
+	decon->bts.used_cnt = used_cnt;
 
 	for (i = 0; i < BTS_DPP_MAX; ++i) {
 		decon->bts.bw[i] = bts_info.dpp[i].bw;
@@ -295,15 +298,14 @@ void dpu_bts_calc_bw(struct decon_device *decon, struct decon_reg_data *regs)
 	DPU_DEBUG_BTS("%s -\n", __func__);
 }
 
+#define MIN_BW_FOR_MIF_676MHZ	(5679000)
 void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 		u32 is_after)
 {
 	struct bts_bw bw = { 0, };
-#if defined(CONFIG_EXYNOS_DISPLAYPORT)
 	struct displayport_device *displayport = get_displayport_drvdata();
 	videoformat cur = displayport->cur_video;
 	__u64 pixelclock = supported_videos[cur].dv_timings.bt.pixelclock;
-#endif
 
 	DPU_DEBUG_BTS("%s +\n", __func__);
 
@@ -313,6 +315,22 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 	/* update peak & read bandwidth per DPU port */
 	bw.peak = decon->bts.peak;
 	bw.read = decon->bts.total_bw;
+
+	if (decon->dt.psr_mode == DECON_VIDEO_MODE) {
+		/* To induce MIF to be set to 676Mhz to prevent underruns
+		 * when more than four layers are used
+		 * mif_freq = bw * 100 / BUS_WIDTH / MIF_UTIL(65%)
+		 * bw = mif_freq * MIF_UTIL * BUS_WIDTH / 100
+		 * bw = 546 * 65 * 16 / 100 = 5678400 KB
+		 * -> if BW > MIF_567MHz_BW, then MIF will be 676MHz.
+		 */
+		if ((decon->bts.total_bw < MIN_BW_FOR_MIF_676MHZ) &&
+				(decon->bts.used_cnt >= 4)) {
+			bw.read = MIN_BW_FOR_MIF_676MHZ;
+			DPU_DEBUG_BTS("\tused_cnt = %d\n", decon->bts.used_cnt);
+		}
+	}
+
 	DPU_DEBUG_BTS("\tpeak = %d, read = %d\n", bw.peak, bw.read);
 
 	if (bw.read == 0)
@@ -322,11 +340,9 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 		if (decon->bts.total_bw <= decon->bts.prev_total_bw)
 			bts_update_bw(decon->bts.type, bw);
 
-#if defined(CONFIG_EXYNOS_DISPLAYPORT)
 		if ((displayport->state == DISPLAYPORT_STATE_ON)
 			&& (pixelclock >= UHD_60HZ_PIXEL_CLOCK)) /* 4K DP case */
 			return;
-#endif
 
 		if (decon->bts.max_disp_freq <= decon->bts.prev_max_disp_freq)
 			pm_qos_update_request(&decon->bts.disp_qos,
@@ -338,11 +354,9 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 		if (decon->bts.total_bw > decon->bts.prev_total_bw)
 			bts_update_bw(decon->bts.type, bw);
 
-#if defined(CONFIG_EXYNOS_DISPLAYPORT)
 		if ((displayport->state == DISPLAYPORT_STATE_ON)
 			&& (pixelclock >= UHD_60HZ_PIXEL_CLOCK)) /* 4K DP case */
 			return;
-#endif
 
 		if (decon->bts.max_disp_freq > decon->bts.prev_max_disp_freq)
 			pm_qos_update_request(&decon->bts.disp_qos,
@@ -354,7 +368,7 @@ void dpu_bts_update_bw(struct decon_device *decon, struct decon_reg_data *regs,
 
 void dpu_bts_acquire_bw(struct decon_device *decon)
 {
-#if defined(CONFIG_DECON_BTS_LEGACY) && defined(CONFIG_EXYNOS_DISPLAYPORT)
+#if defined(CONFIG_DECON_BTS_LEGACY)
 	struct displayport_device *displayport = get_displayport_drvdata();
 	videoformat cur = displayport->cur_video;
 	__u64 pixelclock = supported_videos[cur].dv_timings.bt.pixelclock;
@@ -413,7 +427,7 @@ void dpu_bts_release_bw(struct decon_device *decon)
 		pm_qos_update_request(&decon->bts.disp_qos, 0);
 		decon->bts.prev_max_disp_freq = 0;
 	} else if (decon->dt.out_type == DECON_OUT_DP) {
-#if defined(CONFIG_DECON_BTS_LEGACY) && defined(CONFIG_EXYNOS_DISPLAYPORT)
+#if defined(CONFIG_DECON_BTS_LEGACY)
 		if (pm_qos_request_active(&decon->bts.mif_qos))
 			pm_qos_update_request(&decon->bts.mif_qos, 0);
 		else

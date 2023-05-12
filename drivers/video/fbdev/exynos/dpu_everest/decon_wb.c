@@ -19,11 +19,16 @@ static irqreturn_t decon_wb_irq_handler(int irq, void *dev_data)
 	ext_irq = 0;
 
 	spin_lock(&decon->slock);
-	if (IS_DECON_OFF_STATE(decon))
+	if (decon->state == DECON_STATE_OFF) {
 		goto irq_end;
+	}
 
 	irq_sts_reg = decon_reg_get_interrupt_and_clear(decon->id, &ext_irq);
 
+	if (irq_sts_reg & DPU_UNDER_FLOW_INT_EN) {
+		DPU_EVENT_LOG(DPU_EVT_UNDERRUN, &decon->sd, ktime_set(0, 0));
+		decon_err("DECON%d FIFO underrun\n", decon->id);
+	}
 	if (irq_sts_reg & DPU_FRAME_DONE_INT_EN) {
 		DPU_EVENT_LOG(DPU_EVT_DECON_FRAMEDONE, &decon->sd, ktime_set(0, 0));
 		decon_dbg("%s Frame Done is occured. timeline:%d, %d\n",
@@ -52,8 +57,8 @@ int decon_wb_register_irq(struct decon_device *decon)
 	/* Get IRQ resource and register IRQ handler. */
 	/* 0: Under Flow irq */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler, 0,
+			pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install irq\n");
 		return ret;
@@ -61,8 +66,8 @@ int decon_wb_register_irq(struct decon_device *decon)
 
 	/* 1: FrameStart irq */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 1);
-	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler, 0,
+			pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install irq\n");
 		return ret;
@@ -70,8 +75,8 @@ int decon_wb_register_irq(struct decon_device *decon)
 
 	/* 2: FrameDone irq */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 2);
-	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler, 0,
+			pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install irq\n");
 		return ret;
@@ -79,8 +84,8 @@ int decon_wb_register_irq(struct decon_device *decon)
 
 	/* 3: Extra irq */
 	res = platform_get_resource(pdev, IORESOURCE_IRQ, 3);
-	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler,
-			IRQF_PERF_CRITICAL, pdev->name, decon);
+	ret = devm_request_irq(dev, res->start, decon_wb_irq_handler, 0,
+			pdev->name, decon);
 	if (ret) {
 		decon_err("failed to install irq\n");
 		return ret;

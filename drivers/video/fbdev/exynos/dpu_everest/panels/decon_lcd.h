@@ -34,14 +34,6 @@ enum type_of_ddi {
 	TYPE_OF_NORMAL_DDI,
 };
 
-enum {
-	DSU_MODE_NONE = 0,
-	DSU_MODE_1,
-	DSU_MODE_2,
-	DSU_MODE_3,
-	DSU_MODE_MAX,
-};
-
 #define MAX_RES_NUMBER		5
 #define HDR_CAPA_NUM		4
 
@@ -72,7 +64,9 @@ struct stdphy_pms {
 	unsigned int p;
 	unsigned int m;
 	unsigned int s;
+#if defined(CONFIG_SOC_EXYNOS9810)
 	unsigned int k;
+#endif
 #if defined(CONFIG_EXYNOS_DSIM_DITHER)
 	unsigned int mfr;
 	unsigned int mrr;
@@ -123,6 +117,7 @@ struct decon_lcd {
 	struct lcd_mres_info dt_lcd_mres;
 	struct lcd_hdr_info dt_lcd_hdr;
 	unsigned int bpc;
+	int default_dsim;
 };
 
 struct decon_dsc {
