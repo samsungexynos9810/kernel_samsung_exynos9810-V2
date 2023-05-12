@@ -80,7 +80,7 @@ config EXYNOS_HIBERNATION_THREAD
 config SUPPORT_DOZE
 	bool "Suppot Doze mode to aod service"
 		depends on EXYNOS_EVEREST
-		default n
+		default y
 
 config EXYNOS_AFBC
 	bool "Display sub-system AFBC stream"
