@@ -507,10 +507,12 @@ enum dpp_hdr_standard {
 	DPP_HDR_HLG,
 };
 
+#if 0
 enum decon_color_mode {
 	HAL_COLOR_MODE_NATIVE = 0,
 	HAL_COLOR_MODE_NUM_MAX,
 };
+#endif
 
 /* HAL color mode */
 enum HAL_color_mode {
