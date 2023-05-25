@@ -21,6 +21,8 @@
 #include "decon.h"
 #if defined(CONFIG_SOC_EXYNOS9610)
 #include "./cal_9610/regs-dqe.h"
+#elif defined(CONFIG_SOC_EXYNOS9810)
+#include "./cal_9810/regs-dqe.h"
 #endif
 
 struct dqe_device *dqe_drvdata;
