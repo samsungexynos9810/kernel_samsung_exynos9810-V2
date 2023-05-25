@@ -2870,7 +2870,6 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 	u32 crc_data[2];
 	u32 pwr_mode;
 	u32 dm_num;
-	struct decon_color_mode_info cm_info;
 	u32 cm_num;
 	struct decon_render_intents_num_info intents_num_info;
 	struct decon_render_intent_info intent_info;
