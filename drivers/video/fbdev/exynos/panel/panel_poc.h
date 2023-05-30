@@ -233,7 +233,7 @@ struct poc_partition {
 	int need_preload:1;
 
 	/* result */
-	int preload_done:1;
+	uint preload_done:1;
 	int chksum_ok:1;
 };
 
