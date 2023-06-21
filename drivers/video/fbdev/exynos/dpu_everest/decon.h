@@ -507,13 +507,6 @@ enum dpp_hdr_standard {
 	DPP_HDR_HLG,
 };
 
-#if 0
-enum decon_color_mode {
-	HAL_COLOR_MODE_NATIVE = 0,
-	HAL_COLOR_MODE_NUM_MAX,
-};
-#endif
-
 /* HAL color mode */
 enum HAL_color_mode {
 	HAL_COLOR_MODE_NATIVE = 0,
@@ -526,7 +519,6 @@ enum HAL_color_mode {
 	HAL_COLOR_MODE_SRGB = 7,
 	HAL_COLOR_MODE_ADOBE_RGB = 8,
 	HAL_COLOR_MODE_DISPLAY_P3 = 9,
-	HAL_COLOR_MODE_NUM_MAX,
 };
 
 /* HAL intent info */
@@ -556,10 +548,8 @@ struct decon_color_mode_info {
 /* decon supported color mode */
 enum decon_supported_color_mode {
 	DECON_COLOR_MODE_NATIVE = 0,
-#if 0
 	DECON_COLOR_MODE_SRGB,
 	DECON_COLOR_MODE_DCI_P3,
-#endif
 	DECON_COLOR_MODE_NUM_MAX,
 };
 

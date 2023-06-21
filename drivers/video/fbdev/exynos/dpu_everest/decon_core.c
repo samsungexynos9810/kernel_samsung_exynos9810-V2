@@ -3182,12 +3182,14 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 		break;
 
 	case EXYNOS_GET_COLOR_MODE_NUM:
-		cm_num = HAL_COLOR_MODE_NUM_MAX;
+		cm_num = DECON_COLOR_MODE_NUM_MAX;
+		decon_dbg("DQE: EXYNOS_GET_COLOR_MODE_NUM\n");
 		if (copy_to_user((u32 __user *)arg, &cm_num, sizeof(u32)))
 			ret = -EFAULT;
 		break;
 
 	case EXYNOS_GET_COLOR_MODE:
+		decon_dbg("DQE: EXYNOS_GET_COLOR_MODE\n");
 		if (copy_from_user(&cm_info,
 				   (struct decon_color_mode_info __user *)arg,
 				   sizeof(struct decon_color_mode_info))) {
@@ -3208,6 +3210,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 		break;
 
 	case EXYNOS_SET_COLOR_MODE:
+		decon_dbg("DQE: EXYNOS_SET_COLOR_MODE\n");
 		if (get_user(cm_info.index, (int __user *)arg)) {
 			ret = -EFAULT;
 			break;
@@ -3216,9 +3219,6 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 		ret = decon_set_color_mode(decon, &cm_info);
 		if (ret)
 			break;
-
-		/* ADD additional action if necessary */
-
 		break;
 
 	case EXYNOS_DISP_RESTRICTIONS:
