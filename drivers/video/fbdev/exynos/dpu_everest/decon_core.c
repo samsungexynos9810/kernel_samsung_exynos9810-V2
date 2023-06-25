@@ -2771,7 +2771,17 @@ static int decon_get_color_mode(struct decon_device *decon,
 		color_mode->color_mode = HAL_COLOR_MODE_NATIVE;
 		break;
 
-	/* TODO: add supporting color mode if necessary */
+	case 1:
+		color_mode->color_mode = HAL_COLOR_MODE_SRGB;
+		break;
+
+	case 2:
+		color_mode->color_mode = HAL_COLOR_MODE_DCI_P3;
+		break;
+
+	case 3:
+		color_mode->color_mode = HAL_COLOR_MODE_DISPLAY_P3;
+		break;
 
 	default:
 		decon_err("%s: queried color mode index is wrong!(%d)\n",
