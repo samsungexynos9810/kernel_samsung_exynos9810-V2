@@ -2763,7 +2763,6 @@ static int decon_get_color_mode(struct decon_device *decon,
 {
 	int ret = 0;
 
-	decon_dbg("%s +\n", __func__);
 	mutex_lock(&decon->lock);
 
 	switch (color_mode->index) {
@@ -2790,8 +2789,10 @@ static int decon_get_color_mode(struct decon_device *decon,
 		break;
 	}
 
+	decon_dbg("%s +- : %d, %d\n", __func__,
+		color_mode->index, color_mode->color_mode);
+
 	mutex_unlock(&decon->lock);
-	decon_dbg("%s -\n", __func__);
 
 	return ret;
 }
@@ -2801,9 +2802,10 @@ static int decon_set_color_mode(struct decon_device *decon,
 {
 	int ret = 0;
 
-	decon_dbg("%s +\n", __func__);
+	decon_dbg("%s +-: %d\n", __func__, color_mode->index);
 	mutex_lock(&decon->lock);
 
+#if 0
 	switch (color_mode->index) {
 	case 0:
 		color_mode->color_mode = HAL_COLOR_MODE_NATIVE;
@@ -2817,9 +2819,9 @@ static int decon_set_color_mode(struct decon_device *decon,
 		ret = -EINVAL;
 		break;
 	}
+#endif
 
 	mutex_unlock(&decon->lock);
-	decon_dbg("%s -\n", __func__);
 
 	return ret;
 }
