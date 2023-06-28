@@ -1759,6 +1759,7 @@ int decon_dqe_set_color_transform(struct decon_color_transform_info *transform)
 		if (!transform->matrix[i] && !diag_matrix[i])
 			continue;
 
+/*
 		for (j = 0; j < 4; j++)
 			dqe_info("%6d %6d %6d %6d\n",
 				input[j * 4], input[j * 4 + 1],
@@ -1767,6 +1768,7 @@ int decon_dqe_set_color_transform(struct decon_color_transform_info *transform)
 			dqe_info("%6d %6d %6d %6d\n",
 				transform->matrix[j * 4], transform->matrix[j * 4 + 1],
 				transform->matrix[j * 4 + 2], transform->matrix[j * 4 + 3]);
+*/
 		ret = -1;
 		goto err;
 	}
