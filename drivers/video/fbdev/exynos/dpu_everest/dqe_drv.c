@@ -36,7 +36,7 @@ u32 aps_lut[26];
 #define TUNE_MODE_SIZE 4
 u32 tune_mode[TUNE_MODE_SIZE][280];
 
-int dqe_log_level = 6;
+int dqe_log_level = 7;
 module_param(dqe_log_level, int, 0644);
 
 const u32 bypass_cgc_tune[50] = {
@@ -1725,9 +1725,11 @@ int decon_dqe_set_color_transform(struct decon_color_transform_info *transform)
 {
 	int ret = 0;
 	int i, j;
+	int input[16] = {0,};
 	int temp[16] = {0,};
 	struct dqe_device *dqe = dqe_drvdata;
 	struct decon_device *decon = get_decon_drvdata(0);
+	int diag_matrix[16] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
 
 	mutex_lock(&dqe->lock);
 
@@ -1735,23 +1737,38 @@ int decon_dqe_set_color_transform(struct decon_color_transform_info *transform)
 
 	if (IS_DQE_OFF_STATE(decon)) {
 		dqe_err("decon is not enabled!(%d)\n", (decon) ? (decon->state) : -1);
-                ret = -1;
 		goto err;
 	}
 
 	if (transform->matrix[0] != 65536/*transform->hint*/) {
 		for (i = 0; i < 16; i++)
-			dqe_dbg("matrix[%d] = %d\n", i, transform->matrix[i]);
-
-		for (i = 0; i < 16; i++)
-			temp[i] = transform->matrix[i];
+			input[i] = temp[i] = transform->matrix[i];
 
 		dqe_color_transform_night_light(temp, transform->matrix);
 
 		for (i = 0; i < 16; i++)
-			dqe_dbg("night[%d] = %d\n", i, transform->matrix[i]);
+			if (transform->matrix[i] == -1 || transform->matrix[i] == 1)
+				transform->matrix[i] = 0;
 
 		dqe->ctx.boosted_on = 1;
+	}
+
+	for (i = 0; i < 16; i++) {
+		if (transform->matrix[i] && diag_matrix[i])
+			continue;
+		if (!transform->matrix[i] && !diag_matrix[i])
+			continue;
+
+		for (j = 0; j < 4; j++)
+			dqe_info("%6d %6d %6d %6d\n",
+				input[j * 4], input[j * 4 + 1],
+				input[j * 4 + 2], input[j * 4 + 3]);
+		for (j = 0; j < 4; j++)
+			dqe_info("%6d %6d %6d %6d\n",
+				transform->matrix[j * 4], transform->matrix[j * 4 + 1],
+				transform->matrix[j * 4 + 2], transform->matrix[j * 4 + 3]);
+		ret = -1;
+		goto err;
 	}
 
 	if (transform->matrix[0] == 65536 &&
