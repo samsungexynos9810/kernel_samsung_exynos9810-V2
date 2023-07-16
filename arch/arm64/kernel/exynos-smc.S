@@ -24,31 +24,8 @@
  */
 
 ENTRY(__exynos_smc)
-#ifdef CONFIG_EXYNOS_SNAPSHOT_LOGGING_SMC_CALL
-	stp	x29, x30, [sp, #-48]!
-	mov	x29, sp
-	stp	x0, x1, [sp, #16]
-	stp	x2, x3, [sp, #32]
-	ldr	x3, =save_smc_id
-	str	x0, [x3]
-	mov	x3, #ESS_FLAG_IN
-	bl	exynos_ss_irq
-	ldp	x0, x1, [sp, #16]
-	ldp	x2, x3, [sp, #32]
-#endif
 	dsb	sy
 	smc	#0
-#ifdef CONFIG_EXYNOS_SNAPSHOT_LOGGING_SMC_CALL
-	stp	x0, x1, [sp, #16]
-	stp	x2, x3, [sp, #32]
-	ldr	x3, =save_smc_id
-	ldr	x0, [x3]
-	mov	x3, #ESS_FLAG_OUT
-	bl	exynos_ss_irq
-	ldp	x0, x1, [sp, #16]
-	ldp	x2, x3, [sp, #32]
-	ldp	x29, x30, [sp], #48
-#endif
 	ret
 
 	.section .bss

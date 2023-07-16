@@ -31,7 +31,6 @@
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/syscalls.h>
-#include <linux/exynos-ss.h>
 
 #include <asm/atomic.h>
 #include <asm/barrier.h>
@@ -222,7 +221,6 @@ static void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 		/* skip until specified stack frame */
 		if (!skip) {
 			dump_backtrace_entry(where);
-			exynos_ss_save_log(raw_smp_processor_id(), where);
 		} else if (frame.fp == regs->regs[29]) {
 			skip = 0;
 			/*
@@ -233,7 +231,6 @@ static void dump_backtrace(struct pt_regs *regs, struct task_struct *tsk)
 			 * instead.
 			 */
 			dump_backtrace_entry(regs->pc);
-			exynos_ss_save_log(raw_smp_processor_id(), regs->pc);
 		}
 		ret = unwind_frame(tsk, &frame);
 		if (ret < 0)
@@ -322,7 +319,6 @@ static void dump_backtrace_auto_summary(struct pt_regs *regs, struct task_struct
 #else
 			dump_backtrace_entry_auto_summary(where);
 #endif
-			exynos_ss_save_log(raw_smp_processor_id(), where);
 		} else if (frame.fp == regs->regs[29]) {
 			skip = 0;
 			/*
@@ -337,7 +333,6 @@ static void dump_backtrace_auto_summary(struct pt_regs *regs, struct task_struct
 #else
 			dump_backtrace_entry_auto_summary(regs->pc);
 #endif
-			exynos_ss_save_log(raw_smp_processor_id(), regs->pc);
 		}
 		ret = unwind_frame(tsk, &frame);
 		if (ret < 0)
@@ -930,8 +925,6 @@ static int bug_handler(struct pt_regs *regs, unsigned int esr)
 	 * If recalling hardlockup core has been run before,
 	 * PC value must be replaced to real PC value.
 	 */
-	exynos_ss_hook_hardlockup_entry((void *)regs);
-
 	switch (report_bug(regs->pc, regs)) {
 	case BUG_TRAP_TYPE_BUG:
 #ifdef CONFIG_SEC_DEBUG_EXTRA_INFO

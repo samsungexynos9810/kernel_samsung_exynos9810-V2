@@ -18,7 +18,6 @@
 #include <linux/cpu.h>
 #include <linux/psci.h>
 #include <linux/cpuidle_profiler.h>
-#include <linux/exynos-ss.h>
 #include <linux/cpufreq.h>
 #include <linux/delay.h>
 
@@ -537,7 +536,6 @@ int exynos_cpu_pm_enter(unsigned int cpu, int index)
 		cluster_disable(cpu);
 		update_cluster_idle_state(true, cpu);
 
-		exynos_ss_cpuidle("CPD", 0, 0, ESS_FLAG_IN);
 
 		index = PSCI_CLUSTER_SLEEP;
 	}
@@ -547,7 +545,6 @@ int exynos_cpu_pm_enter(unsigned int cpu, int index)
 			goto out;
 
 		s3c24xx_serial_fifo_wait();
-		exynos_ss_cpuidle("SICD", 0, 0, ESS_FLAG_IN);
 
 		pm_info->sicd_entered = true;
 		index = PSCI_SYSTEM_IDLE;
@@ -567,12 +564,10 @@ void exynos_cpu_pm_exit(unsigned int cpu, int enter_failed)
 		cluster_enable(cpu);
 		update_cluster_idle_state(false, cpu);
 
-		exynos_ss_cpuidle("CPD", 0, 0, ESS_FLAG_OUT);
 	}
 
 	if (pm_info->sicd_entered) {
 		exynos_wakeup_sys_powerdown(SYS_SICD, enter_failed);
-		exynos_ss_cpuidle("SICD", 0, 0, ESS_FLAG_OUT);
 
 		pm_info->sicd_entered = false;
 	}

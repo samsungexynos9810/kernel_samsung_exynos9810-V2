@@ -697,7 +697,6 @@ get_wdt_drv_data(struct platform_device *pdev)
 	}
 }
 
-#ifdef CONFIG_EXYNOS_SNAPSHOT_WATCHDOG_RESET
 int s3c2410wdt_set_emergency_stop(int index)
 {
 	struct s3c2410_wdt *wdt = s3c_wdt[index];
@@ -728,7 +727,6 @@ int s3c2410wdt_keepalive_emergency(bool reset, int index)
 	writel(wdt->count, wdt->reg_base + S3C2410_WTCNT);
 	return 0;
 }
-#endif
 
 static int s3c2410wdt_get_multistage_index(void)
 {
@@ -833,47 +831,6 @@ static int s3c2410wdt_multistage_wdt_start(void)
 	return 0;
 }
 
-#ifdef CONFIG_EXYNOS_SNAPSHOT_WATCHDOG_RESET
-
-static struct wdt_panic_block {
-	struct notifier_block nb_panic_block;
-	struct s3c2410_wdt *wdt;
-} wdt_block;
-
-static int s3c2410wdt_panic_handler(struct notifier_block *nb,
-				   unsigned long l, void *buf)
-{
-	struct wdt_panic_block *wdt_panic =
-		(struct wdt_panic_block *)nb;
-	struct s3c2410_wdt *wdt = wdt_panic->wdt;
-
-	if (!wdt)
-		return -ENODEV;
-
-	/* We assumed that num_online_cpus() > 1 status is abnormal */
-	if (exynos_ss_get_hardlockup() || num_online_cpus() > 1) {
-
-		pr_emerg("%s: watchdog reset is started on panic after 5secs\n", __func__);
-
-		/* set watchdog timer is started and  set by 5 seconds*/
-		s3c2410wdt_set_heartbeat(&wdt->wdt_device, 5);
-		s3c2410wdt_start(&wdt->wdt_device);
-	} else {
-		/*
-		 * kick watchdog to prevent unexpected reset during panic sequence
-		 * and it prevents the hang during panic sequence by watchedog
-		 */
-		s3c2410wdt_keepalive(&wdt->wdt_device);
-	}
-
-	/* If not all core hardlocks and panic sequences,
-	 * multistage watchdog should be turned off.
-	 */
-	s3c2410wdt_multistage_wdt_stop();
-
-	return 0;
-}
-
 inline int s3c2410wdt_set_emergency_reset(unsigned int timeout_cnt, int index)
 {
 	struct s3c2410_wdt *wdt = s3c_wdt[index];
@@ -966,7 +923,6 @@ inline void s3c2410wdt_reset_confirm(unsigned long mtime, int index)
 
 	/* This function does not return. */
 }
-#endif
 
 #ifdef CONFIG_PM_SLEEP
 static int s3c2410wdt_dev_suspend(struct device *dev)
@@ -1291,13 +1247,6 @@ static int s3c2410wdt_probe(struct platform_device *pdev)
 	wtcon = readl(wdt->reg_base + S3C2410_WTCON);
 	if (cluster_index == LITTLE_CLUSTER) {
 		register_syscore_ops(&s3c2410wdt_syscore_ops);
-#ifdef CONFIG_EXYNOS_SNAPSHOT_WATCHDOG_RESET
-	/* register panic handler for watchdog reset */
-		wdt_block.nb_panic_block.notifier_call = s3c2410wdt_panic_handler;
-		wdt_block.wdt = wdt;
-		atomic_notifier_chain_register(&panic_notifier_list,
-				&wdt_block.nb_panic_block);
-#endif
 	}
 	dev_info(dev, "watchdog cluster %d, %sactive, reset %sabled, irq %sabled\n",
 		cluster_index,

@@ -28,7 +28,6 @@
 #include <linux/mfd/samsung/s2mps18-private.h>
 #include <linux/io.h>
 #include <linux/mutex.h>
-#include <linux/exynos-ss.h>
 #include <linux/debugfs.h>
 #include <linux/interrupt.h>
 #ifdef CONFIG_SEC_PM_DEBUG

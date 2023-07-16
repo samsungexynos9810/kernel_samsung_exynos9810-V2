@@ -37,7 +37,6 @@
 #include <linux/completion.h>
 #include <linux/of.h>
 #include <linux/irq_work.h>
-#include <linux/exynos-ss.h>
 #ifdef CONFIG_SEC_DEBUG_EXTRA_INFO
 #include <linux/sec_debug.h>
 #endif
@@ -841,7 +840,6 @@ static void ipi_cpu_stop(unsigned int cpu, struct pt_regs *regs)
 
 	local_irq_disable();
 
-	exynos_ss_save_context(regs);
 #ifdef CONFIG_SEC_DEBUG_EXTRA_INFO
 	if (!user_mode(regs))
 		sec_debug_set_extra_info_backtrace_cpu(regs, cpu);
@@ -864,8 +862,6 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 		trace_ipi_entry_rcuidle(ipi_types[ipinr]);
 		__inc_irq_stat(cpu, ipi_irqs[ipinr]);
 	}
-
-	exynos_ss_irq(ipinr, handle_IPI, irqs_disabled(), ESS_FLAG_IN);
 
 	switch (ipinr) {
 	case IPI_RESCHEDULE:
@@ -915,8 +911,6 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 
 	if ((unsigned)ipinr < NR_IPI)
 		trace_ipi_exit_rcuidle(ipi_types[ipinr]);
-
-	exynos_ss_irq(ipinr, handle_IPI, irqs_disabled(), ESS_FLAG_OUT);
 
 	set_irq_regs(old_regs);
 }

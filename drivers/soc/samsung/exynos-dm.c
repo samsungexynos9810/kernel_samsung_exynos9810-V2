@@ -16,7 +16,6 @@
 #include <linux/errno.h>
 #include <linux/of.h>
 #include <linux/slab.h>
-#include <linux/exynos-ss.h>
 #include "acpm/acpm.h"
 #include "acpm/acpm_ipc.h"
 
@@ -658,8 +657,6 @@ static int __policy_update_call_to_DM(enum exynos_dm_type dm_type, u32 min_freq,
 #endif
 	s32 time = 0, pre_time = 0;
 
-	exynos_ss_dm((int)dm_type, min_freq, max_freq, pre_time, time);
-
 	do_gettimeofday(&pre);
 	do_gettimeofday(&before);
 
@@ -704,8 +701,6 @@ out:
 		(before.tv_usec - pre.tv_usec);
 	time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
 		(after.tv_usec - before.tv_usec);
-
-	exynos_ss_dm((int)dm_type, min_freq, max_freq, pre_time, time);
 
 	return 0;
 }
@@ -769,8 +764,6 @@ static int __DM_CALL(enum exynos_dm_type dm_type, unsigned long *target_freq)
 	struct timeval pre, before, after;
 	s32 time = 0, pre_time = 0;
 
-	exynos_ss_dm((int)dm_type, *target_freq, 1, pre_time, time);
-
 	do_gettimeofday(&pre);
 	do_gettimeofday(&before);
 
@@ -831,8 +824,6 @@ static int __DM_CALL(enum exynos_dm_type dm_type, unsigned long *target_freq)
 		(before.tv_usec - pre.tv_usec);
 	time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
 		(after.tv_usec - before.tv_usec);
-
-	exynos_ss_dm((int)dm_type, *target_freq, 3, pre_time, time);
 
 	return 0;
 }

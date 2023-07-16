@@ -24,7 +24,7 @@ config SEC_REBOOT
 
 menuconfig SEC_DEBUG
 	bool "Enable TN debugging features"
-	depends on EXYNOS_SNAPSHOT && SEC_REBOOT
+	depends on SEC_REBOOT
 	default y
 
 config SEC_DEBUG_RESET_REASON

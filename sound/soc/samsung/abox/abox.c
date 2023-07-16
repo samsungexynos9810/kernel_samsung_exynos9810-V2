@@ -35,7 +35,6 @@
 #include <sound/samsung/vts.h>
 
 #include <soc/samsung/exynos-pmu.h>
-#include <soc/samsung/exynos-itmon.h>
 #include "../../../../drivers/iommu/exynos-iommu.h"
 
 #include "abox_util.h"
@@ -5844,25 +5843,6 @@ static int abox_modem_notifier(struct notifier_block *nb,
 	return NOTIFY_DONE;
 }
 
-#ifdef CONFIG_EXYNOS_ITMON
-static int abox_itmon_notifier(struct notifier_block *nb,
-		unsigned long action, void *nb_data)
-{
-	struct abox_data *data = container_of(nb, struct abox_data, itmon_nb);
-	struct device *dev = &data->pdev->dev;
-	struct itmon_notifier *itmon_data = nb_data;
-
-	if (itmon_data && itmon_data->dest && (strncmp("ABOX", itmon_data->dest,
-			sizeof("ABOX") - 1) == 0)) {
-		dev_info(dev, "%s(%lu)\n", __func__, action);
-		data->enabled = false;
-		return NOTIFY_OK;
-	}
-
-	return NOTIFY_DONE;
-}
-#endif
-
 static ssize_t calliope_version_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
@@ -6222,11 +6202,6 @@ static int samsung_abox_probe(struct platform_device *pdev)
 
 	data->modem_nb.notifier_call = abox_modem_notifier;
 	register_modem_event_notifier(&data->modem_nb);
-
-#ifdef CONFIG_EXYNOS_ITMON
-	data->itmon_nb.notifier_call = abox_itmon_notifier;
-	itmon_notifier_chain_register(&data->itmon_nb);
-#endif
 
 	abox_ima_init(dev, data);
 	abox_failsafe_init(dev);

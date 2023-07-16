@@ -75,7 +75,6 @@
 #include <linux/compiler.h>
 #include <linux/frame.h>
 #include <linux/prefetch.h>
-#include <linux/exynos-ss.h>
 #include <linux/cpufreq_times.h>
 #include <linux/sched/loadavg.h>
 #include <linux/cgroup-defs.h>
@@ -3525,7 +3524,6 @@ static void __sched notrace __schedule(bool preempt)
 		raw_spin_unlock_irq(&rq->lock);
 	}
 
-	exynos_ss_task(smp_processor_id(), rq->curr);
 	balance_callback(rq);
 }
 

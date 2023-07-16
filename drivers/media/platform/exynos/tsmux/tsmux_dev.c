@@ -2051,34 +2051,6 @@ static const struct file_operations tsmux_fops = {
 	.compat_ioctl = tsmux_ioctl,
 };
 
-#ifdef CONFIG_EXYNOS_ITMON
-static int tsmux_itmon_notifier(struct notifier_block *nb, unsigned long action, void *nb_data)
-{
-	struct tsmux_device *tsmux_dev;
-	struct itmon_notifier *itmon_info = nb_data;
-	int is_port = 0, is_master = 0, is_dest = 0;
-
-	tsmux_dev = container_of(nb, struct tsmux_device, itmon_nb);
-
-	if (IS_ERR_OR_NULL(itmon_info))
-		return NOTIFY_DONE;
-
-	if (itmon_info->port && strncmp("WFD", itmon_info->port, sizeof("WFD") - 1) == 0)
-		is_port = 1;
-	if (itmon_info->master && strncmp("WFD", itmon_info->master, sizeof("WFD") - 1) == 0)
-		is_master = 1;
-	if (itmon_info->dest && strncmp("WFD", itmon_info->dest, sizeof("WFD") - 1) == 0)
-		is_dest = 1;
-
-	if (is_port || is_master || is_dest) {
-		tsmux_sfr_dump();
-		return NOTIFY_BAD;
-	} else {
-		return NOTIFY_DONE;
-	}
-}
-#endif
-
 static int tsmux_probe(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -2175,11 +2147,6 @@ static int tsmux_probe(struct platform_device *pdev)
 		goto err_misc_register;
 
 	platform_set_drvdata(pdev, tsmux_dev);
-
-#ifdef CONFIG_EXYNOS_ITMON
-	tsmux_dev->itmon_nb.notifier_call = tsmux_itmon_notifier;
-	itmon_notifier_chain_register(&tsmux_dev->itmon_nb);
-#endif
 
 	setup_timer(&tsmux_dev->watchdog_timer, tsmux_watchdog, 0);
 	INIT_WORK(&tsmux_dev->watchdog_work, tsmux_watchdog_work_handler);

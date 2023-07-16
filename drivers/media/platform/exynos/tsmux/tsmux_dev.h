@@ -24,9 +24,6 @@
 #include <linux/exynos_ion.h>
 #include <linux/wait.h>
 #include <media/exynos_tsmux.h>
-#ifdef CONFIG_EXYNOS_ITMON
-#include <soc/samsung/exynos-itmon.h>
-#endif
 
 #include "tsmux.h"
 
@@ -69,9 +66,6 @@ struct tsmux_device {
 	int ctx_cnt;
 	int ctx_cur;
 
-#ifdef CONFIG_EXYNOS_ITMON
-	struct notifier_block itmon_nb;
-#endif
 	struct timer_list watchdog_timer;
 	struct work_struct watchdog_work;
 	struct tsmux_watchdog_tick watchdog_tick[TSMUX_MAX_CMD_QUEUE_NUM];

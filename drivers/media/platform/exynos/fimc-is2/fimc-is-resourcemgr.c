@@ -43,10 +43,6 @@
 #include <linux/exynos-busmon.h>
 #endif
 
-#ifdef ENABLE_KERNEL_LOG_DUMP
-#include <linux/exynos-ss.h>
-#endif
-
 #include "fimc-is-resourcemgr.h"
 #include "fimc-is-hw.h"
 #include "fimc-is-debug.h"
@@ -710,9 +706,6 @@ static int fimc_is_tmu_notifier(struct notifier_block *nb,
 #ifdef CONFIG_EXYNOS_THERMAL
 	int ret = 0, fps = 0;
 	struct fimc_is_resourcemgr *resourcemgr;
-#ifdef CONFIG_EXYNOS_SNAPSHOT_THERMAL
-	char *cooling_device_name = "ISP";
-#endif
 	resourcemgr = container_of(nb, struct fimc_is_resourcemgr, tmu_notifier);
 
 	switch (state) {
@@ -746,10 +739,6 @@ static int fimc_is_tmu_notifier(struct notifier_block *nb,
 		err("[RSC] invalid tmu state(%ld)", state);
 		break;
 	}
-
-#ifdef CONFIG_EXYNOS_SNAPSHOT_THERMAL
-	exynos_ss_thermal(NULL, 0, cooling_device_name, resourcemgr->limited_fps);
-#endif
 	return ret;
 #else
 	return 0;
@@ -839,52 +828,6 @@ static int fimc_is_fw_share_dump(void)
 			(void *)virt_to_phys(buf), SHARED_SIZE);
 p_err:
 	return ret;
-}
-#endif
-
-#ifdef ENABLE_KERNEL_LOG_DUMP
-int fimc_is_kernel_log_dump(bool overwrite)
-{
-	static int dumped;
-	struct fimc_is_core *core;
-	struct fimc_is_resourcemgr *resourcemgr;
-	void *log_kernel;
-	unsigned long long when;
-	unsigned long usec;
-
-	core = (struct fimc_is_core *)dev_get_drvdata(fimc_is_dev);
-	if (!core)
-		return -EINVAL;
-
-	resourcemgr = &core->resourcemgr;
-
-	if (dumped && !overwrite) {
-		when = resourcemgr->kernel_log_time;
-		usec = do_div(when, NSEC_PER_SEC) / NSEC_PER_USEC;
-		info("kernel log was saved already at [%5lu.%06lu]\n",
-				(unsigned long)when, usec);
-
-		return -ENOSPC;
-	}
-
-	log_kernel = (void *)exynos_ss_get_item_vaddr("log_kernel");
-	if (!log_kernel)
-		return -EINVAL;
-
-	if (resourcemgr->kernel_log_buf) {
-		resourcemgr->kernel_log_time = local_clock();
-
-		info("kernel log saved to %p(%p) from %p\n",
-				resourcemgr->kernel_log_buf,
-				(void *)virt_to_phys(resourcemgr->kernel_log_buf),
-				log_kernel);
-		memcpy(resourcemgr->kernel_log_buf, log_kernel,
-				exynos_ss_get_item_size("log_kernel"));
-
-		dumped = 1;
-	}
-
-	return 0;
 }
 #endif
 
@@ -1132,10 +1075,7 @@ int fimc_is_resourcemgr_probe(struct fimc_is_resourcemgr *resourcemgr,
 #ifdef CONFIG_CMU_EWF
 	get_cmuewf_index(np, &idx_ewf);
 #endif
-#ifdef ENABLE_KERNEL_LOG_DUMP
-	resourcemgr->kernel_log_buf = kzalloc(exynos_ss_get_item_size("log_kernel"),
-						GFP_KERNEL);
-#endif
+
 
 	mutex_init(&resourcemgr->global_param.lock);
 	resourcemgr->global_param.video_mode = 0;
@@ -1254,19 +1194,6 @@ int fimc_is_resource_get(struct fimc_is_resourcemgr *resourcemgr, u32 rsc_type)
 		ret = -EMFILE;
 		goto p_err;
 	}
-
-#ifdef ENABLE_KERNEL_LOG_DUMP
-	/* to secure kernel log when there was an instance that remain open */
-	{
-		struct fimc_is_resource *resource_ischain;
-
-		resource_ischain = GET_RESOURCE(resourcemgr, RESOURCE_TYPE_ISCHAIN);
-		if ((rsc_type != RESOURCE_TYPE_ISCHAIN)	&& rsccount == 1) {
-			if (atomic_read(&resource_ischain->rsccount) == 1)
-				fimc_is_kernel_log_dump(false);
-		}
-	}
-#endif
 
 	if (rsccount == 0) {
 		TIME_LAUNCH_STR(LAUNCH_TOTAL);

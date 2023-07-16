@@ -19,7 +19,6 @@
 #include <linux/list.h>
 #include <linux/wait.h>
 #include <linux/slab.h>
-#include <linux/exynos-ss.h>
 
 #include "acpm.h"
 #include "acpm_ipc.h"
@@ -49,10 +48,6 @@ void acpm_fw_log_level(unsigned int on)
 
 void acpm_ramdump(void)
 {
-#ifdef CONFIG_EXYNOS_SNAPSHOT_ACPM
-	if (acpm_debug->dump_size)
-		memcpy(acpm_debug->dump_dram_base, acpm_debug->dump_base, acpm_debug->dump_size);
-#endif
 }
 
 void timestamp_write(void)
@@ -179,18 +174,7 @@ void acpm_log_print(void)
 				reg_id = NO_SET_REGMAP;
 			else
 				reg_id = get_reg_id(val >> 12);
-
-			if (reg_id == NO_SS_RANGE)
-				exynos_ss_regulator(time, "outSc", val >> 12, (val >> 4) & 0xFF, (val >> 4) & 0xFF, val & 0xF);
-			else if (reg_id == NO_SET_REGMAP)
-				exynos_ss_regulator(time, "noMap", val >> 12, (val >> 4) & 0xFF, (val >> 4) & 0xFF, val & 0xF);
-			else
-				exynos_ss_regulator(time, regulator_ss[reg_id].name, val >> 12,
-						get_reg_voltage(regulator_ss[reg_id], (val >> 4) & 0xFF),
-						(val >> 4) & 0xFF,
-						val & 0xF);
 		}
-		exynos_ss_acpm(time, str, val);
 
 		if (acpm_debug->debug_log_level == 1 || !log_level)
 			pr_info("[ACPM_FW] : %llu id:%u, %s, %x\n", time, id, str, val);
@@ -709,11 +693,6 @@ static void log_buffer_init(struct device *dev, struct device_node *node)
 	if (prop)
 		acpm_debug->period = be32_to_cpup(prop);
 
-#ifdef CONFIG_EXYNOS_SNAPSHOT_ACPM
-	acpm_debug->dump_dram_base = kzalloc(acpm_debug->dump_size, GFP_KERNEL);
-	exynos_ss_printk("[ACPM] acpm framework SRAM dump to dram base: 0x%x\n",
-			virt_to_phys(acpm_debug->dump_dram_base));
-#endif
 	pr_info("[ACPM] acpm framework SRAM dump to dram base: 0x%llx\n",
 			virt_to_phys(acpm_debug->dump_dram_base));
 

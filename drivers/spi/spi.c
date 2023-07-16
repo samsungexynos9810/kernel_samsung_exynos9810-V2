@@ -1243,9 +1243,7 @@ static void __spi_pump_messages(struct spi_master *master, bool in_kthread)
 		goto out;
 	}
 
-	exynos_ss_spi(master, master->cur_msg, ESS_FLAG_IN);
 	ret = master->transfer_one_message(master, master->cur_msg);
-	exynos_ss_spi(master, master->cur_msg, ESS_FLAG_OUT);
 	if (ret) {
 		dev_err(&master->dev,
 			"failed to transfer one message from queue\n");

@@ -18,12 +18,12 @@
 #include <linux/cpu.h>
 #include <linux/io.h>
 #include <linux/slab.h>
-#include <linux/exynos-ss.h>
 #include <asm-generic/io.h>
 #include <linux/ctype.h>
 #include <linux/pm_qos.h>
 
 #include <soc/samsung/exynos-pmu.h>
+#include <soc/samsung/exynos-condbg.h>
 #include <linux/moduleparam.h>
 
 /* Override the default prefix for the compatibility with other models */

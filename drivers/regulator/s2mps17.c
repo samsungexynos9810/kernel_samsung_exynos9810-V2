@@ -28,7 +28,6 @@
 #include <linux/mfd/samsung/s2mps17-private.h>
 #include <linux/io.h>
 #include <linux/mutex.h>
-#include <linux/exynos-ss.h>
 #include <linux/debugfs.h>
 
 static struct s2mps17_info *static_info;

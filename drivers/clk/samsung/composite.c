@@ -1378,17 +1378,14 @@ int cal_vclk_enable(struct clk_hw *hw)
 	if (vclk->lock)
 		spin_lock_irqsave(vclk->lock, flags);
 
-	exynos_ss_clk(hw, __func__, 1, ESS_FLAG_IN);
 	/* Call cal api to enable virtual clock */
 	ret = cal_clk_enable(vclk->id);
 	if (ret) {
 		pr_err("[CAL]%s failed %d %d.\n", __func__, vclk->id, ret);
-		exynos_ss_clk(hw, __func__, 1, ESS_FLAG_ON);
 		if (vclk->lock)
 			spin_unlock_irqrestore(vclk->lock, flags);
 		return -EAGAIN;
 	}
-	exynos_ss_clk(hw, __func__, 1, ESS_FLAG_OUT);
 
 	if (vclk->lock)
 		spin_unlock_irqrestore(vclk->lock, flags);
@@ -1408,17 +1405,14 @@ void cal_vclk_disable(struct clk_hw *hw)
 	if (vclk->lock)
 		spin_lock_irqsave(vclk->lock, flags);
 
-	exynos_ss_clk(hw, __func__, 0, ESS_FLAG_IN);
 	/* Call cal api to disable virtual clock */
 	ret = cal_clk_disable(vclk->id);
 	if (ret) {
 		pr_err("[CAL]%s failed %d %d.\n", __func__, vclk->id, ret);
-		exynos_ss_clk(hw, __func__, 0, ESS_FLAG_ON);
 		if (vclk->lock)
 			spin_unlock_irqrestore(vclk->lock, flags);
 		return;
 	}
-	exynos_ss_clk(hw, __func__, 0, ESS_FLAG_OUT);
 
 	if (vclk->lock)
 		spin_unlock_irqrestore(vclk->lock, flags);
@@ -1444,10 +1438,8 @@ unsigned long cal_vclk_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	struct samsung_vclk *vclk = to_vclk(hw);
 	unsigned long ret = 0;
 
-	exynos_ss_clk(hw, __func__, 0, ESS_FLAG_IN);
 	/* Call cal api to recalculate rate */
 	ret = cal_clk_getrate(vclk->id);
-	exynos_ss_clk(hw, __func__, ret, ESS_FLAG_OUT);
 
 	return ret;
 }
@@ -1458,14 +1450,12 @@ unsigned long cal_vclk_gate_recalc_rate(struct clk_hw *hw, unsigned long parent_
 	struct clk_hw *parent;
 	unsigned long ret = 0;
 
-	exynos_ss_clk(hw, __func__, 0, ESS_FLAG_IN);
 	parent = clk_hw_get_parent(hw);
 	if (parent) {
 		vclk = to_vclk(parent);
 		/* call cal api to recalculate rate */
 		ret = cal_clk_getrate(vclk->id);
 	}
-	exynos_ss_clk(hw, __func__, ret, ESS_FLAG_OUT);
 
 	return ret;
 }
@@ -1486,18 +1476,15 @@ int cal_vclk_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long prate
 	if (vclk->lock)
 		spin_lock_irqsave(vclk->lock, flags);
 
-	exynos_ss_clk(hw, __func__, rate, ESS_FLAG_IN);
 	/* Call cal api to set rate of clock */
 	ret = cal_clk_setrate(vclk->id, rate);
 	if (ret) {
 		pr_err("[CAL]%s failed %d %lu %d.\n", __func__,
 			vclk->id, rate, ret);
-		exynos_ss_clk(hw, __func__, rate, ESS_FLAG_ON);
 		if (vclk->lock)
 			spin_unlock_irqrestore(vclk->lock, flags);
 		return -EAGAIN;
 	}
-	exynos_ss_clk(hw, __func__, rate, ESS_FLAG_OUT);
 
 	if (vclk->lock)
 		spin_unlock_irqrestore(vclk->lock, flags);
@@ -1535,18 +1522,15 @@ int cal_vclk_dfs_set_rate(struct clk_hw *hw, unsigned long rate, unsigned long p
 	if (vclk->lock)
 		spin_lock_irqsave(vclk->lock, flags);
 
-	exynos_ss_clk(hw, __func__, rate, ESS_FLAG_IN);
 	/* Call cal api to set rate of clock */
 	ret = cal_dfs_set_rate(vclk->id, rate);
 	if (ret) {
 		pr_err("[CAL]%s failed %d %lu %d.\n", __func__,
 			vclk->id, rate, ret);
-		exynos_ss_clk(hw, __func__, rate, ESS_FLAG_ON);
 		if (vclk->lock)
 			spin_unlock_irqrestore(vclk->lock, flags);
 		return -EAGAIN;
 	}
-	exynos_ss_clk(hw, __func__, rate, ESS_FLAG_OUT);
 
 	if (vclk->lock)
 		spin_unlock_irqrestore(vclk->lock, flags);
@@ -1606,14 +1590,10 @@ int cal_vclk_qactive_enable(struct clk_hw *hw)
 	if (vclk->lock)
 		spin_lock_irqsave(vclk->lock, flags);
 
-	exynos_ss_clk(hw, __func__, 1, ESS_FLAG_IN);
-
 	reg = readl(vclk->addr);
 	reg &= ~(vclk->mask);
 	reg |= vclk->val;
 	writel(reg, vclk->addr);
-
-	exynos_ss_clk(hw, __func__, 1, ESS_FLAG_OUT);
 
 	if (vclk->lock)
 		spin_unlock_irqrestore(vclk->lock, flags);
@@ -1636,13 +1616,9 @@ void cal_vclk_qactive_disable(struct clk_hw *hw)
 	if (vclk->lock)
 		spin_lock_irqsave(vclk->lock, flags);
 
-	exynos_ss_clk(hw, __func__, 0, ESS_FLAG_IN);
-
 	reg = readl(vclk->addr);
 	reg &= ~(vclk->mask);
 	writel(reg, vclk->addr);
-
-	exynos_ss_clk(hw, __func__, 0, ESS_FLAG_OUT);
 
 	if (vclk->lock)
 		spin_unlock_irqrestore(vclk->lock, flags);

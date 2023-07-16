@@ -22,7 +22,6 @@
 #include <linux/irq_work.h>
 #include <linux/mfd/samsung/s2mps18-private.h>
 #include <trace/events/power.h>
-#include <linux/exynos-ss.h>
 
 #include "../../../kernel/sched/sched.h"
 
@@ -174,10 +173,8 @@ static void set_ocp_max_limit(unsigned int down_step)
 		pr_debug("OCP max limit is released\n");
 	}
 
-	exynos_ss_printk("OCP_enter:%ukHz\n", data->clipped_freq);
 	trace_ocp_max_limit(data->clipped_freq, 1);
 	cpufreq_update_policy(data->cpu);
-	exynos_ss_printk("OCP_exit:%ukHz\n", data->clipped_freq);
 	trace_ocp_max_limit(data->clipped_freq, 0);
 
 	/* Whenever ocp max limit is changed, ocp stats should be updated. */
@@ -280,7 +277,6 @@ static void control_ocp_operation(bool enable)
 	data->enabled = enable;
 
 	pr_info("OCP operation is %s\n", (enable)?"enabled":"disabled");
-	exynos_ss_printk("OCP_%s\n", (enable)?"enabled":"disabled");
 }
 
 /****************************************************************/

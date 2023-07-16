@@ -16,7 +16,6 @@
 #include <linux/bitmap.h>
 #include <linux/irqdomain.h>
 #include <linux/sysfs.h>
-#include <linux/exynos-ss.h>
 #ifdef CONFIG_SEC_DUMP_SUMMARY
 #include <linux/sec_debug.h>
 #endif
@@ -641,11 +640,9 @@ int __handle_domain_irq(struct irq_domain *domain, unsigned int hwirq,
 			bool lookup, struct pt_regs *regs)
 {
 	struct pt_regs *old_regs = set_irq_regs(regs);
-	unsigned long long start_time;
 	unsigned int irq = hwirq;
 	int ret = 0;
 
-	exynos_ss_irq_exit_var(start_time);
 	irq_enter();
 
 #ifdef CONFIG_IRQ_DOMAIN
@@ -665,7 +662,6 @@ int __handle_domain_irq(struct irq_domain *domain, unsigned int hwirq,
 	}
 
 	irq_exit();
-	exynos_ss_irq_exit(irq, start_time);
 	set_irq_regs(old_regs);
 	return ret;
 }

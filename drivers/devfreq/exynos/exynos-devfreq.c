@@ -23,7 +23,6 @@
 #include <linux/slab.h>
 #include <linux/reboot.h>
 #include <linux/suspend.h>
-#include <linux/exynos-ss.h>
 #include <linux/io.h>
 #include <linux/sched.h>
 #include <linux/exynos-wd.h>
@@ -868,7 +867,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 		data->devfreq_type = DEVFREQ_MIF;
 		data->pm_qos_class = PM_QOS_BUS_THROUGHPUT;
 		data->pm_qos_class_max = PM_QOS_BUS_THROUGHPUT_MAX;
-		data->ess_flag = ESS_FLAG_MIF;
 	} else if (!strcmp(devfreq_type, "int")) {
 		data->devfreq_type = DEVFREQ_INT;
 		data->pm_qos_class = PM_QOS_DEVICE_THROUGHPUT;
@@ -877,7 +875,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_INT;
 	} else if (!strcmp(devfreq_type, "intcam")) {
 		data->devfreq_type = DEVFREQ_INTCAM;
 		data->pm_qos_class = PM_QOS_INTCAM_THROUGHPUT;
@@ -886,7 +883,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_INTCAM;
 	} else if (!strcmp(devfreq_type, "disp")) {
 		data->devfreq_type = DEVFREQ_DISP;
 		data->pm_qos_class = PM_QOS_DISPLAY_THROUGHPUT;
@@ -895,7 +891,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_DISP;
 	} else if (!strcmp(devfreq_type, "cam")) {
 		data->devfreq_type = DEVFREQ_CAM;
 		data->pm_qos_class = PM_QOS_CAM_THROUGHPUT;
@@ -904,7 +899,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_ISP;
 	} else if (!strcmp(devfreq_type, "aud")) {
 		data->devfreq_type = DEVFREQ_AUD;
 		data->pm_qos_class = PM_QOS_AUD_THROUGHPUT;
@@ -913,7 +907,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_AUD;
 	} else if (!strcmp(devfreq_type, "iva")) {
 		data->devfreq_type = DEVFREQ_IVA;
 		data->pm_qos_class = PM_QOS_IVA_THROUGHPUT;
@@ -922,7 +915,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_IVA;
 	} else if (!strcmp(devfreq_type, "score")) {
 		data->devfreq_type = DEVFREQ_SCORE;
 		data->pm_qos_class = PM_QOS_SCORE_THROUGHPUT;
@@ -931,7 +923,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_SCORE;
 	} else if (!strcmp(devfreq_type, "fsys0")) {
 		data->devfreq_type = DEVFREQ_FSYS0;
 		data->pm_qos_class = PM_QOS_FSYS0_THROUGHPUT;
@@ -940,7 +931,6 @@ static int exynos_devfreq_parse_dt(struct device_node *np, struct exynos_devfreq
 #else
 		data->pm_qos_class_max = PM_QOS_RESERVED;
 #endif
-		data->ess_flag = ESS_FLAG_FSYS0;
 	} else {
 		dev_err(data->dev, "not support devfreq type (%s)\n", devfreq_type);
 		return -EINVAL;
@@ -1680,8 +1670,6 @@ static int exynos_devfreq_target(struct device *dev, unsigned long *target_freq,
 	/* calcuration to voltage set ordering */
 	volt_order = exynos_devfreq_set_volt_order(data);
 
-	exynos_ss_freq(data->ess_flag, data->old_freq, data->new_freq, ESS_FLAG_IN);
-
 	if (data->use_cl_dvfs && !data->volt_offset) {
 		if (data->ops.cl_dvfs_stop) {
 			ret = data->ops.cl_dvfs_stop(data->dev, data->new_idx);
@@ -1873,8 +1861,6 @@ static int exynos_devfreq_target(struct device *dev, unsigned long *target_freq,
 			}
 		}
 	}
-
-	exynos_ss_freq(data->ess_flag, data->old_freq, data->new_freq, ESS_FLAG_OUT);
 
 	data->old_freq = data->new_freq;
 	data->old_idx = data->new_idx;

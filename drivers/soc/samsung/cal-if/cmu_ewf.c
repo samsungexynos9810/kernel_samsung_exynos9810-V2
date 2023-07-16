@@ -23,10 +23,6 @@ static void __iomem *cmu_cmu;
 static spinlock_t cmuewf_lock;
 static int ewf_refcnt[EWF_MAX_INDEX];
 
-#ifdef CONFIG_EXYNOS_SNAPSHOT_CLK
-static struct clk_hw ewf_clk;
-#endif
-
 int get_cmuewf_index(struct device_node *np, unsigned int *index)
 {
 	int len;
@@ -53,7 +49,6 @@ int set_cmuewf(unsigned int index, unsigned int en)
 
 	spin_lock_irqsave(&cmuewf_lock, flags);
 
-	exynos_ss_clk(&ewf_clk, __func__, 1, ESS_FLAG_IN);
 	if (en) {
 		reg = __raw_readl(cmu_cmu + EARLY_WAKEUP_FORCED_ENABLE);
 		reg |= 1 << index;
@@ -70,7 +65,6 @@ int set_cmuewf(unsigned int index, unsigned int en)
 		} else if (tmp < 0) {
 			pr_err("[EWF]%s ref count mismatch. ewf_index:%u\n", __func__, index);
 
-			exynos_ss_clk(&ewf_clk, __func__, 1, ESS_FLAG_ON);
 			ret = -EINVAL;
 			goto exit;
 		}
@@ -78,7 +72,6 @@ int set_cmuewf(unsigned int index, unsigned int en)
 		ewf_refcnt[index] -= 1;
 	}
 
-	exynos_ss_clk(&ewf_clk, __func__, 1, ESS_FLAG_OUT);
 exit:
 	spin_unlock_irqrestore(&cmuewf_lock, flags);
 

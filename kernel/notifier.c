@@ -6,7 +6,6 @@
 #include <linux/vmalloc.h>
 #include <linux/reboot.h>
 #include <linux/suspend.h>
-#include <linux/exynos-ss.h>
 
 /*
  *	Notifier list for kernel code which wants to be called
@@ -97,7 +96,6 @@ static int notifier_call_chain(struct notifier_block **nl,
 		}
 #endif
 		if (is_pm_chain_notifier(nl, val)) {
-			exynos_ss_suspend(nb->notifier_call, NULL, ESS_FLAG_IN);
 #ifdef CONFIG_DEBUG_NOTIFIERS_PRINT_ELAPSED_TIME
 			if (val == PM_SUSPEND_PREPARE)
 				start = jiffies;
@@ -114,7 +112,6 @@ static int notifier_call_chain(struct notifier_block **nl,
 						__func__, (void *)(nb->notifier_call), elapsed);
 			}
 #endif
-			exynos_ss_suspend(nb->notifier_call, NULL, ESS_FLAG_OUT);
 		}
 
 		if (nr_calls)

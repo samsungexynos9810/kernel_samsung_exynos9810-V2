@@ -26,7 +26,6 @@
 #include <linux/nmi.h>
 #include <linux/console.h>
 #include <linux/bug.h>
-#include <linux/exynos-ss.h>
 
 #include <asm/core_regs.h>
 #include <soc/samsung/exynos-condbg.h>
@@ -185,7 +184,6 @@ void panic(const char *fmt, ...)
 	old_cpu  = atomic_cmpxchg(&panic_cpu, PANIC_CPU_INVALID, this_cpu);
 
 	if (old_cpu != PANIC_CPU_INVALID) {
-		exynos_ss_hook_hardlockup_exit();
 		panic_smp_self_stop();
 	}
 
@@ -216,8 +214,6 @@ void panic(const char *fmt, ...)
 	}
 #endif
 
-	exynos_ss_prepare_panic();
-	exynos_ss_dump_panic(buf, (size_t)strnlen(buf, sizeof(buf)));
 #ifdef CONFIG_DEBUG_BUGVERBOSE
 	/*
 	 * Avoid nested stack-dumping if a panic occurs during oops processing
@@ -267,8 +263,6 @@ void panic(const char *fmt, ...)
 	/* Call flush even twice. It tries harder with a single online CPU */
 	printk_nmi_flush_on_panic();
 	kmsg_dump(KMSG_DUMP_PANIC);
-
-	exynos_ss_post_panic();
 
 	/*
 	 * If you doubt kdump always works fine in any situation,

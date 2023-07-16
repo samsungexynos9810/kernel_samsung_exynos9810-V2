@@ -188,7 +188,6 @@ static void sec_auto_summary_init_print_buf(unsigned long base)
 	auto_summary_info->edata.data[0] = virt_to_phys(entry_dbg_saved_data);
 
 	register_set_auto_comm_buf(sec_debug_hook_auto_comm);
-	register_set_auto_comm_lastfreq(sec_debug_hook_auto_comm_lastfreq);
 }
 
 static unsigned long sas_size;

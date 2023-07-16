@@ -31,7 +31,6 @@
 #include <linux/cpuset.h>
 #include <linux/sched.h>
 #include <../kernel/sched/sched.h>
-#include <linux/exynos-ss.h>
 
 #include <trace/events/power.h>
 #define CREATE_TRACE_POINTS
@@ -264,7 +263,6 @@ void get_online_cpus(void)
 	cpuhp_lock_acquire_read();
 	mutex_lock(&cpu_hotplug.lock);
 	atomic_inc(&cpu_hotplug.refcount);
-	exynos_ss_printkl((size_t) current, atomic_read(&cpu_hotplug.refcount));
 	mutex_unlock(&cpu_hotplug.lock);
 }
 EXPORT_SYMBOL_GPL(get_online_cpus);
@@ -277,7 +275,6 @@ void put_online_cpus(void)
 		return;
 
 	refcount = atomic_dec_return(&cpu_hotplug.refcount);
-	exynos_ss_printkl((size_t) current, atomic_read(&cpu_hotplug.refcount));
 	if (WARN_ON(refcount < 0)) /* try to fix things up */
 		atomic_inc(&cpu_hotplug.refcount);
 

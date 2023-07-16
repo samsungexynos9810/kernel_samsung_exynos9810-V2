@@ -39,7 +39,6 @@
 #include <linux/gpio.h>
 #include <linux/delay.h>
 #include <linux/wakelock.h>
-#include <linux/exynos-ss.h>
 #include <linux/bitops.h>
 #include <linux/smc.h>
 #include <soc/samsung/pmu-cp.h>
@@ -1203,7 +1202,6 @@ void mif_set_snapshot(bool enable)
 {
 	if (!enable)
 		acpm_stop_log();
-	exynos_ss_set_enable("log_kevents", enable);
 }
 
 struct mif_buff_mng *init_mif_buff_mng(unsigned char *buffer_start,

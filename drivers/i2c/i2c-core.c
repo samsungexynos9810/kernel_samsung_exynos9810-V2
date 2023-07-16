@@ -59,7 +59,6 @@
 #include <linux/slab.h>
 
 #include "i2c-core.h"
-#include <linux/exynos-ss.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/i2c.h>
@@ -2586,9 +2585,7 @@ int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
 			i2c_lock_bus(adap, I2C_LOCK_SEGMENT);
 		}
 
-		exynos_ss_i2c(adap, msgs, num, ESS_FLAG_IN);
 		ret = __i2c_transfer(adap, msgs, num);
-		exynos_ss_i2c(adap, msgs, num, ESS_FLAG_OUT);
 		i2c_unlock_bus(adap, I2C_LOCK_SEGMENT);
 
 		return ret;

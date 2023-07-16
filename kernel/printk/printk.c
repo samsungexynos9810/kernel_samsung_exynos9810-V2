@@ -582,42 +582,6 @@ void register_init_log_hook_func(void (*func)(const char *buf, size_t size))
 }
 #endif
 
-#ifdef CONFIG_EXYNOS_SNAPSHOT
-static size_t hook_size;
-static char hook_text[LOG_LINE_MAX + PREFIX_MAX];
-static void (*func_hook_logbuf)(const char *buf, size_t size);
-static size_t msg_print_text(const struct printk_log *msg, enum log_flags prev,
-				bool syslog, char *buf, size_t size);
-void register_hook_logbuf(void (*func)(const char *buf, size_t size))
-{
-	unsigned long flags;
-
-	raw_spin_lock_irqsave(&logbuf_lock, flags);
-	/*
-	 * In register hooking function,  we should check messages already
-	 * printed on log_buf. If so, they will be copyied to backup
-	 * exynos log buffer
-	 * */
-	if (log_first_seq != log_next_seq) {
-		unsigned int step_seq, step_idx, start, end;
-		struct printk_log *msg;
-		start = log_first_seq;
-		end = log_next_seq;
-		step_idx = log_first_idx;
-		for (step_seq = start; step_seq < end; step_seq++) {
-			msg = (struct printk_log *)(log_buf + step_idx);
-			hook_size = msg_print_text(msg, msg->flags,
-					true, hook_text, LOG_LINE_MAX + PREFIX_MAX);
-			func(hook_text, hook_size);
-			step_idx = log_next(step_idx);
-		}
-	}
-	func_hook_logbuf = func;
-	raw_spin_unlock_irqrestore(&logbuf_lock, flags);
-}
-EXPORT_SYMBOL(register_hook_logbuf);
-#endif
-
 
 /*
  * Define how much of the log buffer we could take at maximum. The value
@@ -711,24 +675,6 @@ static int log_store(int facility, int level,
 		msg->pid = task_pid_nr(current);
 		msg->cpu = smp_processor_id();
 		msg->in_interrupt = in_interrupt() ? 1 : 0;
-	}
-#endif
-#ifdef CONFIG_EXYNOS_SNAPSHOT
-	if (func_hook_logbuf) {
-		hook_size = msg_print_text(msg, msg->flags,
-				true, hook_text, LOG_LINE_MAX + PREFIX_MAX);
-		func_hook_logbuf(hook_text, hook_size);
-
-#ifdef CONFIG_SEC_DEBUG_AUTO_SUMMARY
-		if (msg->for_auto_summary && func_hook_auto_comm)
-			func_hook_auto_comm(msg->type_auto_summary, hook_text, hook_size);
-#endif
-
-#ifdef CONFIG_SEC_DEBUG_INIT_LOG
-		if (task_pid_nr(current) == 1 && func_hook_init_log) {
-			func_hook_init_log(hook_text, hook_size);
-		}
-#endif
 	}
 #endif
 	/* insert message */

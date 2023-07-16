@@ -279,11 +279,7 @@ static unsigned cmd_line;
 #define PL330_DBGMC_START(addr)		do {} while (0)
 #endif
 
-#ifdef CONFIG_DMADEVICES_DEBUG
-#define DBG_PRINT(x...)		exynos_ss_printk(x);
-#else
 #define DBG_PRINT(x...)		do {} while (0)
-#endif
 
 /* The number of default descriptors */
 

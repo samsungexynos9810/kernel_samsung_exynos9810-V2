@@ -75,7 +75,6 @@
 #include <linux/compiler.h>
 #include <linux/frame.h>
 #include <linux/prefetch.h>
-#include <linux/exynos-ss.h>
 
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
@@ -3603,7 +3602,6 @@ static void __sched notrace __schedule(bool preempt)
 		raw_spin_unlock_irq(&rq->lock);
 	}
 
-	exynos_ss_task(smp_processor_id(), rq->curr);
 	balance_callback(rq);
 }
 

@@ -199,7 +199,6 @@ int cpuidle_enter_state(struct cpuidle_device *dev, struct cpuidle_driver *drv,
 	sched_idle_set_state(target_state, index);
 
 	trace_cpu_idle_rcuidle(index, dev->cpu);
-	exynos_ss_cpuidle(drv->states[index].desc, index, 0, ESS_FLAG_IN);
 	time_start = ns_to_ktime(local_clock());
 
 	stop_critical_timings();
@@ -207,8 +206,6 @@ int cpuidle_enter_state(struct cpuidle_device *dev, struct cpuidle_driver *drv,
 	start_critical_timings();
 
 	time_end = ns_to_ktime(local_clock());
-	exynos_ss_cpuidle(drv->states[index].desc, entered_state,
-			(int)ktime_to_us(ktime_sub(time_end, time_start)), ESS_FLAG_OUT);
 	trace_cpu_idle_rcuidle(PWR_EVENT_EXIT, dev->cpu);
 
 	/* The cpu is no longer idle or about to enter idle. */

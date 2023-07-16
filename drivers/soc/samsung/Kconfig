@@ -152,13 +152,6 @@ config EXYNOS_DVFS_MANAGER
 	  Enable DVFS Manager for Exynos SoC.
 	  This module controls constraint between each DVFS domains.
 
-config EXYNOS_SDM
-	bool "Exynos Security Dump Manager Support"
-	depends on EXYNOS_SNAPSHOT
-	default y
-	help
-	  Exynos Security Dump Manager
-
 config EXYNOS_OCP
 	bool "Exynos OCP Handler"
 	depends on CPU_FREQ
@@ -196,11 +189,6 @@ config EXYNOS_SMC_LOG_THRESHOLD
 	int "threshold of detection(microsecond)"
 	range 0 1000000
 	default 0
-
-config EXYNOS_SNAPSHOT_LOGGING_SMC_CALL
-	bool "Support logging SMC call"
-	depends on EXYNOS_SNAPSHOT
-	default y
 
 source "drivers/soc/samsung/exynos-hdcp/Kconfig"
 
