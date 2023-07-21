@@ -1281,7 +1281,7 @@ static int getidx_dsc_table(struct maptbl *tbl)
 static int getidx_resolution_table(struct maptbl *tbl)
 {
 	int row = 0;
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	struct panel_device *panel = (struct panel_device *)tbl->pdata;
 	struct decon_lcd *lcd_info = &panel->lcd_info;
 

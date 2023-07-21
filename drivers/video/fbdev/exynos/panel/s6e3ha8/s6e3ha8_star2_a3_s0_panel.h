@@ -1975,7 +1975,7 @@ static u8 star2_a3_s0_tdmb_tune_table[][1] = {
 };
 #endif
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static u8 STAR2_A3_S0_OMOK_2CH_LATCH1[] = {
 	0xB0, 0x05
 };
@@ -2216,7 +2216,7 @@ static u8 STAR2_A3_S0_GAMMA_UPDATE_ENABLE[] = { 0xF7, 0x03 };
 static u8 STAR2_A3_S0_ACL_ONOFF[] = { 0x55, 0x00 };
 static u8 STAR2_A3_S0_ACL_CONTROL[] = { 0xB4, 0x00, 0x44, 0x80, 0x65, 0x26, 0x00 };
 static u8 STAR2_A3_S0_ACL_DIM_FRM[] = { 0xB4, 0x20 };
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static u8 STAR2_A3_S0_SCALER[] = { 0xBA, 0x01, 0x26, 0x08, 0x08, 0xF3};
 #if 0
 static u8 STAR2_A3_S0_SCALER_UPDATE_TIMMING_00[] = { 0xB0, 0x0A };
@@ -2344,7 +2344,7 @@ static DEFINE_VARIABLE_PACKET(star2_a3_s0_dsc, DSI_PKT_TYPE_COMP, STAR2_A3_S0_DS
 static DEFINE_PKTUI(star2_a3_s0_pps, &star2_a3_s0_maptbl[PPS_MAPTBL], 0);
 static DEFINE_VARIABLE_PACKET(star2_a3_s0_pps, DSI_PKT_TYPE_PPS, STAR2_A3_S0_PPS, 0);
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static DEFINE_PKTUI(star2_a3_s0_scaler, &star2_a3_s0_maptbl[SCALER_MAPTBL], 1);
 static DEFINE_VARIABLE_PACKET(star2_a3_s0_scaler, DSI_PKT_TYPE_WR, STAR2_A3_S0_SCALER, 0);
 static DEFINE_PKTUI(star2_a3_s0_caset, &star2_a3_s0_maptbl[CASET_MAPTBL], 1);
@@ -2565,7 +2565,7 @@ static void *star2_a3_s0_init_cmdtbl[] = {
 #ifdef CONFIG_DISPLAY_USE_INFO
 	&s6e3ha8_dmptbl[DUMP_SELF_DIAG],
 #endif
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(star2_a3_s0_level2_key_enable),
 	&PKTINFO(star2_a3_s0_scaler),
 	&KEYINFO(star2_a3_s0_level2_key_disable),
@@ -2605,7 +2605,7 @@ static void *star2_a3_s0_metal_init_cmdtbl[] = {
 #ifdef CONFIG_DISPLAY_USE_INFO
 	&s6e3ha8_dmptbl[DUMP_SELF_DIAG],
 #endif
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(star2_a3_s0_level2_key_enable),
 	&PKTINFO(star2_a3_s0_scaler),
 	&KEYINFO(star2_a3_s0_level2_key_disable),
@@ -2783,7 +2783,7 @@ static void *star2_a3_s0_metal_alpm_exit_cmdtbl[] = {
 	&KEYINFO(star2_a3_s0_level2_key_disable),
 };
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static void *star2_a3_s0_dsu_mode_cmdtbl[] = {
 	&KEYINFO(star2_a3_s0_level1_key_enable),
 	&PKTINFO(star2_a3_s0_dsc),
@@ -3075,7 +3075,7 @@ static void *star2_a3_s0_dummy_cmdtbl[] = {
 	&PKTINFO(star2_a3_s0_avc2_on),
 	&PKTINFO(star2_a3_s0_lpm_off_dyn_vlin),
 	&DLYINFO(star2_a3_s0_wait_1_frame_in_30hz),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(star2_a3_s0_level2_key_enable),
 	&PKTINFO(star2_a3_s0_scaler),
 	&KEYINFO(star2_a3_s0_level2_key_disable),
@@ -3107,7 +3107,7 @@ static struct seqinfo star2_a3_s0_seqtbl[MAX_PANEL_SEQ] = {
 	[PANEL_ALPM_ENTER_SEQ] = SEQINFO_INIT("alpm-enter-seq", star2_a3_s0_alpm_enter_cmdtbl),
 	[PANEL_ALPM_DELAY_SEQ] = SEQINFO_INIT("alpm-enter-delay-seq", star2_a3_s0_alpm_enter_delay_cmdtbl),
 	[PANEL_ALPM_EXIT_SEQ] = SEQINFO_INIT("alpm-exit-seq", star2_a3_s0_alpm_exit_cmdtbl),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	[PANEL_DSU_SEQ] = SEQINFO_INIT("dsu-mode-seq", star2_a3_s0_dsu_mode_cmdtbl),
 #endif
 	[PANEL_MCD_ON_SEQ] = SEQINFO_INIT("mcd-on-seq", star2_a3_s0_mcd_on_cmdtbl),
@@ -3156,7 +3156,7 @@ static struct seqinfo star2_a3_s0_metal_seqtbl[MAX_PANEL_SEQ] = {
 	[PANEL_ALPM_ENTER_SEQ] = SEQINFO_INIT("alpm-enter-seq", star2_a3_s0_alpm_enter_cmdtbl),
 	[PANEL_ALPM_DELAY_SEQ] = SEQINFO_INIT("alpm-enter-delay-seq", star2_a3_s0_alpm_enter_delay_cmdtbl),
 	[PANEL_ALPM_EXIT_SEQ] = SEQINFO_INIT("alpm-exit-seq", star2_a3_s0_metal_alpm_exit_cmdtbl),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	[PANEL_DSU_SEQ] = SEQINFO_INIT("dsu-mode-seq", star2_a3_s0_dsu_mode_cmdtbl),
 #endif
 	[PANEL_MCD_ON_SEQ] = SEQINFO_INIT("mcd-on-seq", star2_a3_s0_mcd_on_cmdtbl),

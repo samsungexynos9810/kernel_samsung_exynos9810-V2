@@ -544,7 +544,7 @@ enum PANEL_SEQ {
 #endif
 	PANEL_HBM_ON_SEQ,
 	PANEL_HBM_OFF_SEQ,
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	PANEL_DSU_SEQ,
 #endif
 	PANEL_MCD_ON_SEQ,
@@ -795,7 +795,7 @@ struct panel_properties {
 	u32 dim_flash_state;	/* success or fail */
 	u32 cur_dim_type;	/* AID DIMMING or DIM FLASH */
 #endif
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	bool mres_updated;
 #endif
 };

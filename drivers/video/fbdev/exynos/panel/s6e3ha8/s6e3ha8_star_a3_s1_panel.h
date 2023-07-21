@@ -1792,7 +1792,7 @@ static u8 star_a3_s1_tdmb_tune_table[][1] = {
 };
 #endif
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static u8 STAR_A3_S1_OMOK_2CH_LATCH1[] = {
 	0xB0, 0x05
 };
@@ -2032,7 +2032,7 @@ static u8 STAR_A3_S1_GAMMA_UPDATE_ENABLE[] = { 0xF7, 0x03 };
 static u8 STAR_A3_S1_ACL_ONOFF[] = { 0x55, 0x00 };
 static u8 STAR_A3_S1_ACL_CONTROL[] = { 0xB4, 0x00, 0x44, 0x80, 0x65, 0x26, 0x00 };
 static u8 STAR_A3_S1_ACL_DIM_FRM[] = { 0xB4, 0x20 };
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static u8 STAR_A3_S1_SCALER[] = { 0xBA, 0x01, 0x26, 0x08, 0x08, 0xF3 };
 #if 0
 static u8 STAR_A3_S1_SCALER_UPDATE_TIMMING_00[] = { 0xB0, 0x0A };
@@ -2160,7 +2160,7 @@ static DEFINE_VARIABLE_PACKET(star_a3_s1_dsc, DSI_PKT_TYPE_COMP, STAR_A3_S1_DSC,
 static DEFINE_PKTUI(star_a3_s1_pps, &star_a3_s1_maptbl[PPS_MAPTBL], 0);
 static DEFINE_VARIABLE_PACKET(star_a3_s1_pps, DSI_PKT_TYPE_PPS, STAR_A3_S1_PPS, 0);
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static DEFINE_PKTUI(star_a3_s1_scaler, &star_a3_s1_maptbl[SCALER_MAPTBL], 1);
 static DEFINE_VARIABLE_PACKET(star_a3_s1_scaler, DSI_PKT_TYPE_WR, STAR_A3_S1_SCALER, 0);
 static DEFINE_PKTUI(star_a3_s1_caset, &star_a3_s1_maptbl[CASET_MAPTBL], 1);
@@ -2385,7 +2385,7 @@ static void *star_a3_s1_init_cmdtbl[] = {
 #ifdef CONFIG_DISPLAY_USE_INFO
 	&s6e3ha8_dmptbl[DUMP_SELF_DIAG],
 #endif
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(star_a3_s1_level2_key_enable),
 	&PKTINFO(star_a3_s1_scaler),
 	&KEYINFO(star_a3_s1_level2_key_disable),
@@ -2553,7 +2553,7 @@ static void *star_a3_s1_alpm_exit_cmdtbl[] = {
 #endif
 };
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static void *star_a3_s1_dsu_mode_cmdtbl[] = {
 	&KEYINFO(star_a3_s1_level1_key_enable),
 	&PKTINFO(star_a3_s1_dsc),
@@ -2833,7 +2833,7 @@ static void *star_a3_s1_dummy_cmdtbl[] = {
 	&PKTINFO(star_a3_s1_avc2_on),
 	&PKTINFO(star_a3_s1_lpm_off_dyn_vlin),
 	&DLYINFO(star_a3_s1_wait_1_frame_in_30hz),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(star_a3_s1_level2_key_enable),
 	&PKTINFO(star_a3_s1_scaler),
 	&KEYINFO(star_a3_s1_level2_key_disable),
@@ -2865,7 +2865,7 @@ static struct seqinfo star_a3_s1_seqtbl[MAX_PANEL_SEQ] = {
 	[PANEL_ALPM_ENTER_SEQ] = SEQINFO_INIT("alpm-enter-seq", star_a3_s1_alpm_enter_cmdtbl),
 	[PANEL_ALPM_DELAY_SEQ] = SEQINFO_INIT("alpm-enter-delay-seq", star_a3_s1_alpm_enter_delay_cmdtbl),
 	[PANEL_ALPM_EXIT_SEQ] = SEQINFO_INIT("alpm-exit-seq", star_a3_s1_alpm_exit_cmdtbl),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	[PANEL_DSU_SEQ] = SEQINFO_INIT("dsu-mode-seq", star_a3_s1_dsu_mode_cmdtbl),
 #endif
 	[PANEL_MCD_ON_SEQ] = SEQINFO_INIT("mcd-on-seq", star_a3_s1_mcd_on_cmdtbl),

@@ -574,7 +574,7 @@ static u8 crown_a3_s0_gram_inv_img_pattern_table[][1] = {
 };
 #endif
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static u8 CROWN_A3_S0_OMOK_2CH_LATCH1[] = {
 	0xB0, 0x05
 };
@@ -806,7 +806,7 @@ static u8 CROWN_A3_S0_GAMMA_UPDATE_ENABLE[] = { 0xF7, 0x03 };
 static u8 CROWN_A3_S0_ACL_ONOFF[] = { 0x55, 0x00 };
 static u8 CROWN_A3_S0_ACL_CONTROL[] = { 0xB4, 0x00, 0x44, 0x80, 0x65, 0x26, 0x00 };
 static u8 CROWN_A3_S0_ACL_DIM_FRM[] = { 0xB4, 0x20 };
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static u8 CROWN_A3_S0_SCALER[] = { 0xBA, 0x01, 0x26, 0x08, 0x08, 0xF3};
 static u8 CROWN_A3_S0_CASET[] = { 0x2A, 0x00, 0x00, 0x05, 0x9F };
 static u8 CROWN_A3_S0_PASET[] = { 0x2B, 0x00, 0x00, 0x09, 0xFF };
@@ -965,7 +965,7 @@ static DEFINE_VARIABLE_PACKET(crown_a3_s0_dsc, DSI_PKT_TYPE_COMP, CROWN_A3_S0_DS
 static DEFINE_PKTUI(crown_a3_s0_pps, &crown_a3_s0_maptbl[PPS_MAPTBL], 0);
 static DEFINE_VARIABLE_PACKET(crown_a3_s0_pps, DSI_PKT_TYPE_PPS, CROWN_A3_S0_PPS, 0);
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static DEFINE_PKTUI(crown_a3_s0_scaler, &crown_a3_s0_maptbl[SCALER_MAPTBL], 1);
 static DEFINE_VARIABLE_PACKET(crown_a3_s0_scaler, DSI_PKT_TYPE_WR, CROWN_A3_S0_SCALER, 0);
 static DEFINE_PKTUI(crown_a3_s0_caset, &crown_a3_s0_maptbl[CASET_MAPTBL], 1);
@@ -1232,7 +1232,7 @@ static void *crown_a3_s0_init_cmdtbl[] = {
 #ifdef CONFIG_DISPLAY_USE_INFO
 	&s6e3ha8_dmptbl[DUMP_SELF_DIAG],
 #endif
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(crown_a3_s0_level2_key_enable),
 	&PKTINFO(crown_a3_s0_scaler),
 	&KEYINFO(crown_a3_s0_level2_key_disable),
@@ -1414,7 +1414,7 @@ static void *crown_a3_s0_alpm_exit_cmdtbl[] = {
 	&KEYINFO(crown_a3_s0_level2_key_disable),
 };
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static void *crown_a3_s0_dsu_mode_cmdtbl[] = {
 	&KEYINFO(crown_a3_s0_level1_key_enable),
 	&PKTINFO(crown_a3_s0_dsc),
@@ -1800,7 +1800,7 @@ static void *crown_a3_s0_dummy_cmdtbl[] = {
 	&PKTINFO(crown_a3_s0_avc2_on),
 	&PKTINFO(crown_a3_s0_lpm_off_dyn_vlin),
 	&DLYINFO(crown_a3_s0_wait_1_frame_in_30hz),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	&KEYINFO(crown_a3_s0_level2_key_enable),
 	&PKTINFO(crown_a3_s0_scaler),
 	&KEYINFO(crown_a3_s0_level2_key_disable),
@@ -1835,7 +1835,7 @@ static struct seqinfo crown_a3_s0_seqtbl[MAX_PANEL_SEQ] = {
 	[PANEL_ALPM_ENTER_SEQ] = SEQINFO_INIT("alpm-enter-seq", crown_a3_s0_alpm_enter_cmdtbl),
 	[PANEL_ALPM_DELAY_SEQ] = SEQINFO_INIT("alpm-enter-delay-seq", crown_a3_s0_alpm_enter_delay_cmdtbl),
 	[PANEL_ALPM_EXIT_SEQ] = SEQINFO_INIT("alpm-exit-seq", crown_a3_s0_alpm_exit_cmdtbl),
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	[PANEL_DSU_SEQ] = SEQINFO_INIT("dsu-mode-seq", crown_a3_s0_dsu_mode_cmdtbl),
 #endif
 	[PANEL_MCD_ON_SEQ] = SEQINFO_INIT("mcd-on-seq", crown_a3_s0_mcd_on_cmdtbl),
