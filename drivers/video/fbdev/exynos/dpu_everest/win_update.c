@@ -415,6 +415,9 @@ void dpu_set_mres_config(struct decon_device *decon, struct decon_reg_data *regs
 
 	DPU_DEBUG_MRES("changed LCD resolution(%d %d)\n",
 			decon->lcd_info->xres, decon->lcd_info->yres);
+
+	DPU_DEBUG_MRES("changed dsc enc/dec sw(%d %d)\n",
+			dsim->lcd_info.dsc_enc_sw, dsim->lcd_info.dsc_dec_sw);
 }
 
 #if !defined(CONFIG_EXYNOS_COMMON_PANEL)
