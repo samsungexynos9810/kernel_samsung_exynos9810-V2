@@ -80,7 +80,7 @@ static ssize_t show_cpufreq_table(struct kobject *kobj,
 	return count - 1;
 }
 
-int exynos_cpufreq_update_volt_table()
+int exynos_cpufreq_update_volt_table(void)
 {
 	struct list_head *domains = get_domain_list();
 	struct exynos_cpufreq_domain *domain;
