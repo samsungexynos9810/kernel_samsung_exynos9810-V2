@@ -53,11 +53,6 @@ config PANEL_AID_DIMMING_DEBUG
 	tristate "Support AID Dimming Debug"
 	default y
 
-config SUPPORT_DSU
-	tristate "Support DSU(Multi Resolution)"
-	depends on EXYNOS_DECON_LCD
-	default n
-
 config SUPPORT_HMD
 	tristate "Support HMD(Head Mount Display - VR)"
 	depends on EXYNOS_DECON_LCD
@@ -136,3 +131,8 @@ config GREEN_SCREEN_WORKAROUND
 	depends on EXYNOS_DECON_LCD
 	tristate "green screen workaround for panel"
 	default y
+
+config EXYNOS_MULTIRESOLUTION
+	bool "Multi resolution LCD support"
+	depends on EXYNOS_EVEREST && FB_WINDOW_UPDATE
+	default n
