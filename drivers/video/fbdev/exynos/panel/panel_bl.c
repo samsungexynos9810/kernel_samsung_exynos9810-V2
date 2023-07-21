@@ -720,11 +720,7 @@ int panel_bl_set_brightness(struct panel_bl_device *panel_bl, int id, int force)
 
 	pr_info("%s bl-%d dim:%s plat_br:%d br[%d]:%d nit:%d(%u.%02u) acl:%s(%d)\n",
 			__func__, id,
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-			panel->panel_data.props.cur_dim_type ? "flash" : "table",
-#else
 			"table",
-#endif
 			brightness, step, subdev->brt_tbl.brt_to_step[step],
 			luminance, luminance_interp / 100, luminance_interp % 100,
 			panel_bl->props.acl_pwrsave ? "on" : "off",

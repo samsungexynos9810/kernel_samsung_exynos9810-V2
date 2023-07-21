@@ -1283,23 +1283,6 @@ static void *crown_a3_s0_res_init_cmdtbl[] = {
 	&KEYINFO(crown_a3_s0_level1_key_disable),
 };
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-static void *crown_a3_s0_dim_flash_res_init_cmdtbl[] = {
-	&s6e3ha8_restbl[RES_DIM_FLASH_GAMMA],
-	&s6e3ha8_restbl[RES_DIM_FLASH_AOR],
-	&s6e3ha8_restbl[RES_DIM_FLASH_VINT],
-	&s6e3ha8_restbl[RES_DIM_FLASH_ELVSS],
-	&s6e3ha8_restbl[RES_DIM_FLASH_IRC],
-	&s6e3ha8_restbl[RES_DIM_FLASH_HMD_GAMMA],
-	&s6e3ha8_restbl[RES_DIM_FLASH_HMD_AOR],
-	&s6e3ha8_restbl[RES_DIM_FLASH_MTP_OFFSET],
-	&KEYINFO(crown_a3_s0_level2_key_enable),
-	&s6e3ha8_restbl[RES_MTP],
-	&s6e3ha8_restbl[RES_HBM_GAMMA],
-	&KEYINFO(crown_a3_s0_level2_key_disable),
-};
-#endif
-
 static void *crown_a3_s0_set_bl_cmdtbl[] = {
 	&KEYINFO(crown_a3_s0_level2_key_enable),
 	&PKTINFO(crown_a3_s0_gamma),
@@ -1820,9 +1803,6 @@ static void *crown_a3_s0_dummy_cmdtbl[] = {
 static struct seqinfo crown_a3_s0_seqtbl[MAX_PANEL_SEQ] = {
 	[PANEL_INIT_SEQ] = SEQINFO_INIT("init-seq", crown_a3_s0_init_cmdtbl),
 	[PANEL_RES_INIT_SEQ] = SEQINFO_INIT("resource-init-seq", crown_a3_s0_res_init_cmdtbl),
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	[PANEL_DIM_FLASH_RES_INIT_SEQ] = SEQINFO_INIT("dim-flash-resource-init-seq", crown_a3_s0_dim_flash_res_init_cmdtbl),
-#endif
 	[PANEL_SET_BL_SEQ] = SEQINFO_INIT("set-bl-seq", crown_a3_s0_set_bl_cmdtbl),
 #ifdef CONFIG_SUPPORT_HMD
 	[PANEL_HMD_ON_SEQ] = SEQINFO_INIT("hmd-on-seq", crown_a3_s0_hmd_on_cmdtbl),

@@ -205,28 +205,6 @@ static void copy_tpout_center_v0(u8 *output, u32 value, u32 v, u32 color)
 	}
 }
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-static int copy_from_dim_flash(struct panel_info *panel_data,
-		u8 *dst, enum dim_flash_items item, int row, int col, int size)
-{
-	static struct resinfo *res[MAX_DIM_FLASH];
-	char *name = s6e3ha8_dim_flash_info[item].name;
-	int nrow = s6e3ha8_dim_flash_info[item].nrow;
-	int ncol = s6e3ha8_dim_flash_info[item].ncol;
-
-	if (!res[item])
-		res[item] = find_panel_resource(panel_data, name);
-
-	if (unlikely(!res[item])) {
-		pr_warn("%s resource(%s) not found\n", __func__, name);
-		return -EIO;
-	}
-
-	memcpy(dst, &res[item]->data[(nrow - row - 1) * ncol + col], size);
-	return 0;
-}
-#endif
-
 void print_gamma_table(struct panel_info *panel_data, int id)
 {
 	int i, j, len, luminance;
@@ -435,105 +413,6 @@ err:
 	return ret;
 }
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-static int generate_gamma_table_using_flash(struct panel_info *panel_data, int id)
-{
-	struct maptbl *tbl = NULL;
-	int i, ret;
-	u32 nr_luminance;
-
-#ifndef CONFIG_SUPPORT_HMD
-	if (id == PANEL_BL_SUBDEV_TYPE_HMD)
-		return -EINVAL;
-#endif
-
-	if (id >= MAX_PANEL_BL_SUBDEV) {
-		panel_err("%s panel_bl-%d invalid id\n", __func__, id);
-		return -EINVAL;
-	}
-
-	nr_luminance = panel_data->panel_dim_info[id]->nr_luminance;
-	tbl = find_panel_maptbl_by_index(panel_data,
-			(id == PANEL_BL_SUBDEV_TYPE_HMD) ? HMD_GAMMA_MAPTBL : GAMMA_MAPTBL);
-	if (unlikely(!tbl)) {
-		pr_err("%s panel_bl-%d gamma_maptbl not found\n", __func__, id);
-		return -EINVAL;
-	}
-
-	for (i = 0; i < nr_luminance; i++)
-		ret = copy_from_dim_flash(panel_data,
-				tbl->arr + maptbl_index(tbl, 0, i, 0),
-				(id == PANEL_BL_SUBDEV_TYPE_HMD) ?
-				DIM_FLASH_HMD_GAMMA : DIM_FLASH_GAMMA,
-				i, 0, sizeof_row(tbl));
-
-	pr_info("%s panel_bl-%d done\n", __func__, id);
-
-	return 0;
-}
-
-static int init_subdev_gamma_table_using_flash(struct maptbl *tbl, int id)
-{
-	struct panel_info *panel_data;
-	struct panel_device *panel;
-	struct panel_dimming_info *panel_dim_info;
-	int ret;
-
-	if (unlikely(!tbl || !tbl->pdata)) {
-		panel_err("%s panel_bl-%d invalid param (tbl %p, pdata %p)\n",
-				__func__, id, tbl, tbl ? tbl->pdata : NULL);
-		return -EINVAL;
-	}
-
-	if (id >= MAX_PANEL_BL_SUBDEV) {
-		panel_err("%s panel_bl-%d invalid id\n", __func__, id);
-		return -EINVAL;
-	}
-
-	panel = tbl->pdata;
-	panel_data = &panel->panel_data;
-	panel_dim_info = panel_data->panel_dim_info[id];
-	if (unlikely(!panel_dim_info)) {
-		pr_err("%s panel_bl-%d panel_dim_info is null\n", __func__, id);
-		return -EINVAL;
-	}
-
-	/* initialize brightness_table */
-	memcpy(&panel->panel_bl.subdev[id].brt_tbl,
-			panel_dim_info->brt_tbl, sizeof(struct brightness_table));
-
-	if (!panel_resource_initialized(panel_data,
-			(id == PANEL_BL_SUBDEV_TYPE_HMD) ?
-			s6e3ha8_dim_flash_info[DIM_FLASH_HMD_GAMMA].name :
-			s6e3ha8_dim_flash_info[DIM_FLASH_GAMMA].name)) {
-		pr_warn("%s resource(%s) not initialized\n", __func__,
-				(id == PANEL_BL_SUBDEV_TYPE_HMD) ?
-				s6e3ha8_dim_flash_info[DIM_FLASH_HMD_GAMMA].name :
-				s6e3ha8_dim_flash_info[DIM_FLASH_GAMMA].name);
-		return -EINVAL;
-	}
-
-	ret = generate_gamma_table_using_flash(panel_data, id);
-	if (ret < 0) {
-		pr_err("%s failed to generate gamma using flash\n", __func__);
-		return ret;
-	}
-
-	if (id == PANEL_BL_SUBDEV_TYPE_DISP) {
-		ret = generate_hbm_gamma_table(panel_data, id);
-		if (ret < 0) {
-			pr_err("%s failed to generate hbm gamma\n", __func__);
-			return ret;
-		}
-	}
-
-	panel_info("%s panel_bl-%d gamma_table initialized\n", __func__, id);
-	print_gamma_table(panel_data, id);
-
-	return 0;
-}
-#endif /* CONFIG_SUPPORT_DIM_FLASH */
-
 static int init_subdev_gamma_table_using_lut(struct maptbl *tbl, int id)
 {
 	struct panel_info *panel_data;
@@ -613,17 +492,7 @@ int init_common_table(struct maptbl *tbl)
 
 static int init_gamma_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_subdev_gamma_table_using_flash(tbl, PANEL_BL_SUBDEV_TYPE_DISP);
-	else
-		return init_subdev_gamma_table_using_lut(tbl, PANEL_BL_SUBDEV_TYPE_DISP);
-#else
 	return init_subdev_gamma_table_using_lut(tbl, PANEL_BL_SUBDEV_TYPE_DISP);
-#endif
 }
 
 static int getidx_common_maptbl(struct maptbl *tbl)
@@ -651,17 +520,7 @@ static int getidx_dimming_maptbl(struct maptbl *tbl)
 #ifdef CONFIG_SUPPORT_HMD
 static int init_hmd_gamma_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_subdev_gamma_table_using_flash(tbl, PANEL_BL_SUBDEV_TYPE_HMD);
-	else
-		return init_subdev_gamma_table_using_lut(tbl, PANEL_BL_SUBDEV_TYPE_HMD);
-#else
 	return init_subdev_gamma_table_using_lut(tbl, PANEL_BL_SUBDEV_TYPE_HMD);
-#endif
 }
 
 static int getidx_hmd_dimming_mtptbl(struct maptbl *tbl)
@@ -951,190 +810,29 @@ static int getidx_mps_table(struct maptbl *tbl)
 	return maptbl_index(tbl, 0, row, 0);
 }
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-static int init_maptbl_from_table(struct maptbl *tbl, enum dim_flash_items item)
-{
-	struct panel_info *panel_data;
-	struct panel_device *panel;
-	struct panel_dimming_info *panel_dim_info;
-	int index, id;
-
-	if (tbl == NULL || tbl->pdata == NULL) {
-		panel_err("PANEL:ERR:%s:maptbl is null\n", __func__);
-		return -EINVAL;
-	}
-
-	panel = tbl->pdata;
-	panel_data = &panel->panel_data;
-	id = (item == DIM_FLASH_HMD_GAMMA || item == DIM_FLASH_HMD_AOR) ?
-		PANEL_BL_SUBDEV_TYPE_HMD : PANEL_BL_SUBDEV_TYPE_DISP;
-	panel_dim_info = panel_data->panel_dim_info[id];
-
-	if (!panel_dim_info->dimming_maptbl) {
-		panel_err("PANEL:ERR:%s:dimming_maptbl is null\n", __func__);
-		return -EINVAL;
-	}
-
-	/* TODO : HMD DIMMING MAPTBL */
-	if (item == DIM_FLASH_GAMMA || item == DIM_FLASH_HMD_GAMMA) {
-		index = DIMMING_GAMMA_MAPTBL;
-	} else if (item == DIM_FLASH_AOR || item == DIM_FLASH_HMD_AOR)
-		index = DIMMING_AOR_MAPTBL;
-	else if (item == DIM_FLASH_VINT)
-		index = DIMMING_VINT_MAPTBL;
-	else if (item == DIM_FLASH_ELVSS)
-		index = DIMMING_ELVSS_MAPTBL;
-	else if (item == DIM_FLASH_IRC)
-		index = DIMMING_IRC_MAPTBL;
-	else
-		return -EINVAL;
-
-	if (!sizeof_maptbl(&panel_dim_info->dimming_maptbl[index]))
-		return -EINVAL;
-
-	maptbl_memcpy(tbl, &panel_dim_info->dimming_maptbl[index]);
-
-	pr_info("%s copy from %s to %s, size %d, item:%d, index:%d\n",
-			__func__, panel_dim_info->dimming_maptbl[index].name, tbl->name,
-			sizeof_maptbl(tbl), item, index);
-
-	//print_maptbl(tbl);
-
-	return 0;
-}
-
-static int init_maptbl_from_flash(struct maptbl *tbl, enum dim_flash_items item)
-{
-	struct panel_info *panel_data;
-	struct panel_device *panel;
-	int layer, row, ret;
-
-	if (tbl == NULL || tbl->pdata == NULL) {
-		panel_err("PANEL:ERR:%s:maptbl is null\n", __func__);
-		return -EINVAL;
-	}
-
-	panel = tbl->pdata;
-	panel_data = &panel->panel_data;
-	if (!panel_resource_initialized(panel_data,
-				s6e3ha8_dim_flash_info[item].name)) {
-		pr_warn("%s resource(%s) not initialized\n",
-				__func__, s6e3ha8_dim_flash_info[item].name);
-		return init_common_table(tbl);
-	}
-
-	for_each_layer(tbl, layer) {
-		for_each_row(tbl, row) {
-			if (row >= s6e3ha8_dim_flash_info[item].nrow)
-				continue;
-			if (item == DIM_FLASH_ELVSS) {
-				ret = copy_from_dim_flash(panel_data,
-						tbl->arr + maptbl_index(tbl, layer, row, 0),
-						item, row, layer, tbl->sz_copy);
-			} else if (item == DIM_FLASH_GAMMA || item == DIM_FLASH_AOR ||
-					item == DIM_FLASH_VINT || item == DIM_FLASH_HMD_GAMMA ||
-					item == DIM_FLASH_HMD_AOR) {
-				ret = copy_from_dim_flash(panel_data,
-						tbl->arr + maptbl_index(tbl, layer, row, 0),
-						item, row, 0, tbl->sz_copy);
-			} else if (item == DIM_FLASH_IRC) {
-				ret = copy_from_dim_flash(panel_data,
-						tbl->arr + maptbl_index(tbl, layer, row, 0),
-						item, row, 0, tbl->sz_copy);
-			}
-		}
-	}
-
-
-	//print_maptbl(tbl);
-
-	return 0;
-}
-#endif
-
 static int init_elvss_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_maptbl_from_flash(tbl, DIM_FLASH_ELVSS);
-	else
-		return init_maptbl_from_table(tbl, DIM_FLASH_ELVSS);
-
-	return 0;
-#else
 	return init_common_table(tbl);
-#endif
 }
 
 static int init_vint_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_maptbl_from_flash(tbl, DIM_FLASH_VINT);
-	else
-		return init_maptbl_from_table(tbl, DIM_FLASH_VINT);
-
-	return 0;
-#else
 	return init_common_table(tbl);
-#endif
 }
 
 static int init_aor_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_maptbl_from_flash(tbl, DIM_FLASH_AOR);
-	else
-		return init_maptbl_from_table(tbl, DIM_FLASH_AOR);
-
-	return 0;
-#else
 	return init_common_table(tbl);
-#endif
 }
 
 static int init_irc_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_maptbl_from_flash(tbl, DIM_FLASH_IRC);
-	else
-		return init_maptbl_from_table(tbl, DIM_FLASH_IRC);
-
-	return 0;
-#else
 	return init_common_table(tbl);
-#endif
 }
 
 static int init_hmd_aor_table(struct maptbl *tbl)
 {
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_device *panel = tbl->pdata;
-	struct panel_info *panel_data = &panel->panel_data;
-
-	if (panel_data->props.cur_dim_type == DIM_TYPE_DIM_FLASH)
-		return init_maptbl_from_flash(tbl, DIM_FLASH_HMD_AOR);
-	else
-		return init_maptbl_from_table(tbl, DIM_FLASH_HMD_AOR);
-
-	return 0;
-#else
 	return init_common_table(tbl);
-#endif
 }
 
 static int init_elvss_temp_table(struct maptbl *tbl)

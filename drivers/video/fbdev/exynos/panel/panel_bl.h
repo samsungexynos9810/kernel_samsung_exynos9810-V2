@@ -21,13 +21,8 @@ struct panel_device;
 
 #define CONFIG_LCD_EXTEND_HBM
 
-#ifdef CONFIG_PANEL_BACKLIGHT_PAC_3_0
 #define BRT_SCALE	(100)
 #define PANEL_BACKLIGHT_PAC_STEPS	(512)
-#else
-#define PANEL_BACKLIGHT_PAC_STEPS	(256)
-#define BRT_SCALE	(1)
-#endif
 #define BRT_SCALE_UP(_val_)	((_val_) * BRT_SCALE)
 #define BRT_SCALE_DN(_val_)	((_val_) / BRT_SCALE)
 #define BRT_TBL_INDEX(_val_)	(BRT_SCALE_DN((_val_) + ((BRT_SCALE) - 1)))

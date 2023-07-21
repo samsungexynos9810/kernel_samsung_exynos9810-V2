@@ -261,15 +261,7 @@ struct panel_device {
 
 	ktime_t ktime_panel_on;
 	ktime_t ktime_panel_off;
-
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	struct panel_work dim_flash_work;
-#endif
 };
-
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-int panel_update_dim_type(struct panel_device *panel, u32 dim_type);
-#endif
 
 static inline bool IS_PANEL_PWR_ON_STATE(struct panel_device *panel)
 {

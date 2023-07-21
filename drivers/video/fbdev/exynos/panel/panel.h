@@ -527,9 +527,6 @@ enum PANEL_SEQ {
 	PANEL_INIT_SEQ,
 	PANEL_EXIT_SEQ,
 	PANEL_RES_INIT_SEQ,
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	PANEL_DIM_FLASH_RES_INIT_SEQ,
-#endif
 	PANEL_MAP_INIT_SEQ,
 	PANEL_DISPLAY_ON_SEQ,
 	PANEL_DISPLAY_OFF_SEQ,
@@ -790,11 +787,6 @@ struct panel_properties {
 #endif
 	u32 key[MAX_CMD_LEVEL];
 	u32 irc_mode;
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	bool dim_flash_on;
-	u32 dim_flash_state;	/* success or fail */
-	u32 cur_dim_type;	/* AID DIMMING or DIM FLASH */
-#endif
 #ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	bool mres_updated;
 #endif

@@ -1308,86 +1308,6 @@ static ssize_t poc_mca_show(struct device *dev,
 }
 #endif
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-static u16 calc_checksum_16bit(u8 *arr, int size)
-{
-	u16 chksum = 0;
-	int i;
-
-	for (i = 0; i < size; i++)
-		chksum += arr[i];
-
-	return chksum;
-}
-
-/*
- * gamma_flash_show() function returns read state and checksum.
- * @read_state(-1 : FAILED, 0 : PROGRESS, 1 : DONE)
- * @checksum(XXXXXXXX XXXXXXXX)
- * The first checksum is by calculation of parameters
- * and the other one is by reading checksum parameter.
- */
-static ssize_t gamma_flash_show(struct device *dev,
-	struct device_attribute *attr, char *buf)
-{
-	struct panel_device *panel = dev_get_drvdata(dev);
-	struct dim_flash_result *result = &panel->dim_flash_work.result;
-	int ret;
-
-	if (panel == NULL) {
-		panel_err("PANEL:ERR:%s:panel is null\n", __func__);
-		return -EINVAL;
-	}
-
-	/* thread is running */
-	if (atomic_read(&panel->dim_flash_work.running))
-		ret = GAMMA_FLASH_PROGRESS;
-	else
-		ret = panel->dim_flash_work.ret;
-
-	pr_info("%s result %d, dim chksum(calc:%04X read:%04X), mtp chksum(reg:%04X, calc:%04X, read:%04X)\n",
-			__func__, ret, result->dim_chksum_by_calc, result->dim_chksum_by_read,
-			calc_checksum_16bit(result->mtp_reg, sizeof(result->mtp_reg)),
-			result->mtp_chksum_by_calc, result->mtp_chksum_by_read);
-
-	return snprintf(buf, PAGE_SIZE, "%d %08X %08X %08X %08X %08X\n",
-			ret, result->dim_chksum_by_calc, result->dim_chksum_by_read,
-			calc_checksum_16bit(result->mtp_reg, sizeof(result->mtp_reg)),
-			result->mtp_chksum_by_calc, result->mtp_chksum_by_read);
-}
-
-static ssize_t gamma_flash_store(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t size)
-{
-	struct panel_device *panel = dev_get_drvdata(dev);
-	struct backlight_device *bd = panel->panel_bl.bd;
-	int rc;
-	unsigned int value;
-
-	if (!IS_PANEL_ACTIVE(panel))
-		return -ENODEV;
-
-	rc = kstrtouint(buf, 0, &value);
-	if (rc < 0)
-		return rc;
-
-	if (atomic_read(&panel->dim_flash_work.running))
-		return -EBUSY;
-
-	panel->dim_flash_work.ret = GAMMA_FLASH_ERROR_NOT_EXIST;
-	memset(&panel->dim_flash_work.result, 0, sizeof(struct dim_flash_result));
-	if (value == 0) {
-		panel_update_dim_type(panel, DIM_TYPE_AID_DIMMING);
-		backlight_update_status(bd);
-	} else if (value == 1) {
-		queue_delayed_work(panel->dim_flash_work.wq,
-				&panel->dim_flash_work.dwork, msecs_to_jiffies(0));
-	}
-
-	return size;
-}
-#endif
-
 #ifdef CONFIG_SUPPORT_GRAYSPOT_TEST
 static ssize_t grayspot_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
@@ -1995,74 +1915,6 @@ static void show_brt_param(struct panel_info *panel_data, int id, int type)
 	}
 }
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-static void show_aid_log(struct panel_info *panel_data, int id)
-{
-	struct dimming_info *dim_info;
-	struct maptbl *tbl = NULL;
-	int layer, row, col, i, len = 0;
-	char *buf;
-	struct panel_device *panel = to_panel_device(panel_data);
-	struct panel_bl_device *panel_bl = &panel->panel_bl;
-	struct panel_bl_sub_dev *subdev;
-	char **tbl_names;
-	int count = 0, nr_tbl_names;
-
-	if (unlikely(!panel_data)) {
-		panel_err("%s:panel is NULL\n", __func__);
-		return;
-	}
-
-	if (id >= MAX_PANEL_BL_SUBDEV) {
-		panel_err("%s invalid bl-%d\n", __func__, id);
-		return;
-	}
-
-	subdev = &panel_bl->subdev[id];
-
-	dim_info = panel_data->dim_info[id];
-	if (!dim_info) {
-		panel_warn("%s bl-%d dim_info is null\n", __func__, id);
-		return;
-	}
-
-	pr_info("[====================== [%s] ======================]\n",
-			(id == PANEL_BL_SUBDEV_TYPE_HMD ? "HMD" : "DISP"));
-	print_dimming_info(dim_info, TAG_MTP_OFFSET_START);
-	print_dimming_info(dim_info, TAG_GAMMA_CENTER_START);
-
-	if (id == PANEL_BL_SUBDEV_TYPE_HMD) {
-		tbl_names = hmd_tbl_names;
-		nr_tbl_names = ARRAY_SIZE(hmd_tbl_names);
-	} else {
-		tbl_names = normal_tbl_names;
-		nr_tbl_names = ARRAY_SIZE(normal_tbl_names);
-	}
-
-	for (i = 0; i < nr_tbl_names; i++) {
-		tbl = find_panel_maptbl_by_name(panel_data, tbl_names[i]);
-		buf = kmalloc(SZ_1K, GFP_KERNEL);
-		line[count++] = buf;
-		len = snprintf(buf, SZ_1K, "[MAPTBL:%s]", tbl_names[i]);
-		for_each_layer(tbl, layer) {
-			for_each_row(tbl, row) {
-				buf = kmalloc(SZ_1K, GFP_KERNEL);
-				line[count++] = buf;
-				len = snprintf(buf, SZ_1K, "lum[%3d] : ",
-						subdev->brt_tbl.lum[row]);
-				for_each_col(tbl, col)
-					len += snprintf(buf + len, SZ_1K - len, "%02X ",
-							tbl->arr[row * sizeof_row(tbl) + col]);
-			}
-		}
-	}
-
-	for (i = 0; i < count; i++) {
-		pr_info("%s\n", line[i]);
-		kfree(line[i]);
-	}
-}
-#else
 static void show_aid_log(struct panel_info *panel_data, int id)
 {
 	struct dimming_info *dim_info;
@@ -2196,7 +2048,6 @@ static void show_aid_log(struct panel_info *panel_data, int id)
 		pr_info("%s\n", buf);
 	}
 }
-#endif /* CONFIG_SUPPORT_DIM_FLASH */
 
 static ssize_t aid_log_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
@@ -2977,9 +2828,6 @@ struct device_attribute panel_attrs[] = {
 #ifdef CONFIG_SUPPORT_POC_FLASH
 	__PANEL_ATTR_RW(poc, 0660),
 	__PANEL_ATTR_RO(poc_mca, 0440),
-#endif
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	__PANEL_ATTR_RW(gamma_flash, 0660),
 #endif
 #ifdef CONFIG_SUPPORT_GRAM_CHECKSUM
 	__PANEL_ATTR_RW(gct, 0664),

@@ -74,9 +74,6 @@ enum dpui_key {
 	DPUI_KEY_PNPOCI,	/* panel POC image index */
 	DPUI_KEY_PNPOCI_ORG,	/* panel POC image index in factory */
 #endif
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-	DPUI_KEY_PNGFLS,	/* panel gamma flash loading result */
-#endif
 
 	/* dependent on processor */
 	DPUI_KEY_EXY_SWRCV,	/* exynos sw recovery count */

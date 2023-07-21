@@ -192,26 +192,6 @@ struct panel_poc_device {
 	u32 nr_partition;
 };
 
-#ifdef CONFIG_SUPPORT_DIM_FLASH
-enum dim_flash_items {
-	DIM_FLASH_GAMMA,
-	DIM_FLASH_AOR,
-	DIM_FLASH_VINT,
-	DIM_FLASH_ELVSS,
-	DIM_FLASH_IRC,
-	DIM_FLASH_HMD_GAMMA,
-	DIM_FLASH_HMD_AOR,
-	MAX_DIM_FLASH,
-};
-
-struct dim_flash_info {
-	char *name;
-	u32 offset;
-	u32 nrow;
-	u32 ncol;
-};
-#endif
-
 struct poc_partition {
 	char *name;
 	u32 addr;

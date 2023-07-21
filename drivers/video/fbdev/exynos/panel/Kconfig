@@ -87,11 +87,6 @@ config SUPPORT_POC_FLASH
 	tristate "Support display poc flash"
 	default n
 
-config SUPPORT_DIM_FLASH
-	depends on EXYNOS_DECON_LCD && SUPPORT_DDI_FLASH
-	tristate "Support display dimming flash"
-	default n
-
 config SUPPORT_GRAM_CHECKSUM
 	depends on EXYNOS_DECON_LCD
 	tristate "Support GRAM Checksum"
@@ -101,11 +96,6 @@ config SUPPORT_TDMB_TUNE
 	depends on EXYNOS_DECON_LCD && TDMB_NOTIFIER
 	tristate "Support TDMB Tuning"
 	default y
-
-config PANEL_BACKLIGHT_PAC_3_0
-	depends on EXYNOS_DECON_LCD
-	tristate "Support baclight PAC 3.0"
-	default n
 
 config DISPLAY_USE_INFO
 	depends on EXYNOS_DECON_LCD
