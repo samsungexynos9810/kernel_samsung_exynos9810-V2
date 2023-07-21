@@ -70,17 +70,6 @@ void clear_disp_det_pend(struct panel_device *panel);
 			pr_info(pr_fmt(fmt), ##__VA_ARGS__);			\
 	} while (0)
 
-#ifdef CONFIG_OLD_DISP_TIMING
-enum {
-	REGULATOR_1p8V = 0,
-	REGULATOR_3p0V,
-	REGULATOR_1p6V,
-	REGULATOR_MAX
-};
-#define REGULATOR_1_NAME "regulator,1p8"
-#define REGULATOR_2_NAME "regulator,3p0"
-#define REGULATOR_3_NAME "regulator,1p6"
-#else
 enum {
 	REGULATOR_3p0V = 0,
 	REGULATOR_1p8V,
@@ -91,7 +80,6 @@ enum {
 #define REGULATOR_2_NAME "regulator,1p8"
 #define REGULATOR_3_NAME "regulator,1p6"
 
-#endif
 enum panel_gpio_lists {
 	PANEL_GPIO_RESET = 0,
 	PANEL_GPIO_DISP_DET,

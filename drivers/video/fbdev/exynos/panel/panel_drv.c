@@ -145,11 +145,6 @@ int __set_panel_power(struct panel_device *panel, int power)
 				goto set_err;
 			}
 		}
-#ifndef CONFIG_OLD_DISP_TIMING
-		usleep_range(10000, 10000 + 10);
-		gpio_direction_output(pad->gpio_reset, 1);
-		usleep_range(5000, 5000 + 10);
-#endif
 	} else {
 		gpio_direction_output(pad->gpio_reset, 0);
 		for (i = REGULATOR_MAX - 1; i >= 0; i--) {
