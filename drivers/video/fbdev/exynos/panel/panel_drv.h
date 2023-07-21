@@ -356,7 +356,7 @@ static inline int panel_aod_power_off(struct panel_device *panel)
 #define PANEL_IOC_DOZE					_IO(PANEL_IOC_BASE, 31)
 #define PANEL_IOC_DOZE_SUSPEND			_IO(PANEL_IOC_BASE, 32)
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 #define PANEL_IOC_SET_DSU				_IOW(PANEL_IOC_BASE, 41, struct dsu_info *)
 #endif
 #define PANEL_IOC_REG_RESET_CB			_IOR(PANEL_IOC_BASE, 51, struct host_cb *)

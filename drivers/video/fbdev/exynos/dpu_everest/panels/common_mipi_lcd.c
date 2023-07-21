@@ -623,7 +623,7 @@ static int common_lcd_doze_suspend(struct dsim_device *dsim)
 	return 0;
 }
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static int common_lcd_dsu(struct dsim_device *dsim, int mres_idx)
 {
 	int ret = 0;
@@ -660,7 +660,7 @@ struct dsim_lcd_driver common_mipi_lcd_driver = {
 	.set_error_cb	= common_lcd_set_error_cb,
 	.doze		= common_lcd_doze,
 	.doze_suspend	= common_lcd_doze_suspend,
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	.mres = common_lcd_dsu,
 #endif
 };

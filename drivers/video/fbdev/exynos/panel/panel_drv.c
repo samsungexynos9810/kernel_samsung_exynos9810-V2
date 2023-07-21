@@ -1465,7 +1465,7 @@ do_exit:
 
 
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 static int panel_set_mres(struct panel_device *panel, int *mres_idx)
 {
 	int ret = 0;
@@ -1773,14 +1773,10 @@ static long panel_core_ioctl(struct v4l2_subdev *sd, unsigned int cmd, void *arg
 		ret = panel_doze(panel, cmd);
 		mdnie_update(&panel->mdnie);
 		break;
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	case PANEL_IOC_SET_DSU:
 		panel_info("PANEL:INFO:%s:PANEL_IOC_SET_DSU\n", __func__);
-#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 		ret = panel_set_mres(panel, arg);
-#else
-		ret = panel_set_dsu(panel, arg);
-#endif
 		break;
 #endif
 	case PANEL_IOC_DISP_ON:
@@ -2153,7 +2149,7 @@ static int panel_parse_lcd_info(struct panel_device *panel)
 	unsigned int res[3];
 	struct decon_lcd *panel_info = &panel->lcd_info;
 
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	int dsu_number, i;
 	unsigned int dsu_res[MAX_DSU_RES_NUMBER];
 	struct dsu_info_dt *dt_dsu_info = &panel_info->dt_dsu_info;
@@ -2245,7 +2241,7 @@ static int panel_parse_lcd_info(struct panel_device *panel)
 		panel_dbg("PANEL:DBG:vt_compensation(%d)\n",
 			panel_info->vt_compensation);
 	}
-#ifdef CONFIG_SUPPORT_DSU
+#ifdef CONFIG_EXYNOS_MULTIRESOLUTION
 	of_property_read_u32(node, "dsu_en", &dt_dsu_info->dsu_en);
 	panel_info("PANEL:INFO:%s:dsu_en : %d\n", __func__, dt_dsu_info->dsu_en);
 

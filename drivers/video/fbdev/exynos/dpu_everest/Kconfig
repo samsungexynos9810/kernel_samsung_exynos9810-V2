@@ -97,15 +97,10 @@ config DSIM_CMD_TEST
         depends on EXYNOS_EVEREST
         default n
 
-config SUPPORT_DSU
-	tristate "Support Dynamic Scale Up (Multi-Resolution)"
-	depends on EXYNOS_EVEREST
-	default n
-
 config EXYNOS_MULTIRESOLUTION
 	bool "Multi resolution LCD support"
 	depends on EXYNOS_EVEREST && FB_WINDOW_UPDATE
-	default y
+	default n
 
 config EXYNOS_VIRTUAL_DISPLAY
 	bool "Virtual display mode"
