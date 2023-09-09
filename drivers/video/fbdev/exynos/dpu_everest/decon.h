@@ -454,6 +454,7 @@ struct decon_win_config_extra {
 struct decon_win_config_data_old_alt {
 	int	retire_fence;
 	int	fd_odma;
+	u32	fps;
 	struct decon_win_config config[MAX_DECON_WIN + 1];
 };
 
@@ -466,6 +467,7 @@ struct decon_win_config_data_old {
 struct decon_win_config_data_alt {
 	int	retire_fence;
 	int	fd_odma;
+	u32	fps;
 	struct decon_win_config config[MAX_DECON_WIN + 1];
 	struct decon_win_config_extra extra;
 };
