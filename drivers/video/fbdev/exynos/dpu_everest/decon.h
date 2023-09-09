@@ -920,6 +920,12 @@ struct decon_fence {
 };
 #endif
 
+struct vsync_applied_time_data {
+	u32 config;
+	u64 time;
+	u32 reserved[4];
+};
+
 struct decon_device {
 	int id;
 	enum decon_state state;
@@ -1493,6 +1499,9 @@ int _decon_disable(struct decon_device *decon, enum decon_state state);
 
 /* DPU aclk */
 #define EXYNOS_DPU_GET_ACLK		_IOR('F', 500, u32)
+
+/* For HWC2.4 */
+#define EXYNOS_GET_VSYNC_CHANGE_TIMELINE	_IOW('F', 850, struct vsync_applied_time_data)
 
 #if defined(CONFIG_EXYNOS_COMMON_PANEL)
 #define V4L2_EVENT_DECON                (V4L2_EVENT_PRIVATE_START + 1000)
