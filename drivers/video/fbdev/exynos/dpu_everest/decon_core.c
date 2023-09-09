@@ -2817,6 +2817,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 	u32 pwr_mode;
 	u32 dm_num;
 	u32 cm_num;
+	u32 actual_mres_mode;
 	int i;
 
 	decon_hiber_block_exit(decon);
@@ -3085,6 +3086,7 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 			dm_info.mm_width = lcd_info->width;
 			dm_info.mm_height = lcd_info->height;
 			dm_info.fps = lcd_info->fps;
+			dm_info.group = dm_info.index;
 		} else {
 			ret = -EINVAL;
 			break;
@@ -3183,6 +3185,13 @@ static int decon_ioctl(struct fb_info *info, unsigned int cmd,
 			ret = -EFAULT;
 			break;
 		}
+		break;
+
+	case EXYNOS_GET_DISPLAY_CURRENT_MODE:
+		actual_mres_mode = lcd_info->mres_mode - DSU_MODE_1;
+
+		if (copy_to_user((u32 __user *)arg, &actual_mres_mode, sizeof(u32)))
+			ret = -EFAULT;
 		break;
 
 	default:
