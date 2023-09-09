@@ -505,6 +505,7 @@ struct decon_display_mode {
 	uint32_t mm_width;
 	uint32_t mm_height;
 	uint32_t fps;
+	uint32_t group;
 };
 
 #ifdef CONFIG_DECON_EVENT_LOG
@@ -1485,6 +1486,7 @@ int _decon_disable(struct decon_device *decon, enum decon_state state);
 #define EXYNOS_GET_DISPLAY_MODE_NUM	_IOW('F', 700, u32)
 #define EXYNOS_GET_DISPLAY_MODE		_IOW('F', 701, struct decon_display_mode)
 #define EXYNOS_SET_DISPLAY_MODE		_IOW('F', 702, struct decon_display_mode)
+#define EXYNOS_GET_DISPLAY_CURRENT_MODE	_IOW('F', 705, u32)
 
 /* cursor async */
 #define DECON_WIN_CURSOR_POS		_IOW('F', 222, struct decon_user_window)
