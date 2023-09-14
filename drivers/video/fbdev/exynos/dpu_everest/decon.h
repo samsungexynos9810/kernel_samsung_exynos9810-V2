@@ -1369,7 +1369,7 @@ static inline bool IS_DECON_HIBER_STATE(struct decon_device *decon)
 
 /* CAL APIs list */
 //void decon_reg_init_probe(u32 id, u32 dsi_idx, struct decon_param *p);
-int decon_reg_wait_for_update_timeout(u32 id, unsigned long timeout);
+int decon_reg_wait_update_done_timeout(u32 id, unsigned long timeout);
 void decon_reg_set_blender_bg_image_size(u32 id, enum decon_dsi_mode dsi_mode,
 		struct decon_lcd *lcd_info);
 void decon_reg_config_data_path_size(u32 id, u32 width, u32 height,

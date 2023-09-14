@@ -828,7 +828,7 @@ static int decon_set_win_info(struct fb_info *info)
 
 	decon_hiber_block_exit(decon);
 
-	decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT);
+	decon_reg_wait_update_done_timeout(decon->id, SHADOW_UPDATE_TIMEOUT);
 
 	win_no = decon->dt.dft_win;
 	win_regs.wincon |= wincon(win_no);
