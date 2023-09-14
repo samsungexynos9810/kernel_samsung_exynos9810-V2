@@ -1829,7 +1829,7 @@ static int __decon_update_regs(struct decon_device *decon, struct decon_reg_data
 	 * window configuration has problem.
 	 */
 	decon_systrace(decon, 'C', "shadow_update_clear", 1);
-	if (decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
+	if (decon_reg_wait_update_done_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
 		decon_warn("decon SHADOW_UPDATE_TIMEOUT\n");
 		return -ETIMEDOUT;
 	}
@@ -2267,7 +2267,7 @@ video_emul_check_done:
 			decon_set_cursor_unmask(decon, false);
 
 		decon_wait_for_vstatus(decon, 50);
-		if (decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
+		if (decon_reg_wait_update_done_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
 			decon_err("%s shadow update timeout\n", __func__);
 #if defined(CONFIG_EXYNOS_COMMON_PANEL)
 			if (decon_is_bypass(decon))
@@ -2357,7 +2357,7 @@ int decon_update_last_regs(struct decon_device *decon,
 		decon_set_cursor_unmask(decon, false);
 
 	decon_wait_for_vstatus(decon, 50);
-	if (decon_reg_wait_for_update_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
+	if (decon_reg_wait_update_done_timeout(decon->id, SHADOW_UPDATE_TIMEOUT) < 0) {
 		decon_err("%s shadow update timeout\n", __func__);
 		ret = -ETIMEDOUT;
 		goto end;

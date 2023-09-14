@@ -625,23 +625,6 @@ void decon_reg_config_win_channel(u32 id, u32 win_idx,
 	decon_write_mask(id, DATA_PATH_CONTROL_1, val, mask);
 }
 
-/* wait until shadow update is finished */
-int decon_reg_wait_for_update_timeout(u32 id, unsigned long timeout)
-{
-	unsigned long delay_time = 100;
-	unsigned long cnt = timeout / delay_time;
-
-	while (decon_read(id, SHADOW_REG_UPDATE_REQ) && --cnt)
-		udelay(delay_time);
-
-	if (!cnt) {
-		decon_err("decon%d timeout of updating decon registers\n", id);
-		return -EBUSY;
-	}
-
-	return 0;
-}
-
 void decon_reg_configure_trigger(u32 id, enum decon_trig_mode mode)
 {
 	u32 val, mask;
@@ -2071,13 +2054,28 @@ void decon_reg_set_window_control(u32 id, int win_idx,
 	decon_dbg("%s: regs->type(%d)\n", __func__, regs->type);
 }
 
+int decon_reg_wait_update_done_timeout(u32 id, unsigned long timeout)
+{
+	unsigned long delay_time = 100;
+	unsigned long cnt = timeout / delay_time;
+
+	while (decon_read(id, SHADOW_REG_UPDATE_REQ) && --cnt)
+		udelay(delay_time);
+
+	if (!cnt) {
+		decon_err("decon%d timeout of updating decon registers\n", id);
+		return -EBUSY;
+	}
+
+	return 0;
+}
 
 int decon_reg_wait_update_done_and_mask(u32 id,
 		struct decon_mode_info *psr, u32 timeout)
 {
 	int result;
 
-	result = decon_reg_wait_for_update_timeout(id, timeout);
+	result = decon_reg_wait_update_done_timeout(id, timeout);
 
 	if (psr->psr_mode == DECON_MIPI_COMMAND_MODE)
 		decon_reg_set_trigger(id, psr, DECON_TRIG_DISABLE);
